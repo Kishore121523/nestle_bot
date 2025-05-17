@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils"; // Assumes you're using the ShadCN `cn` utility
+import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
 interface CustomBtnProps {

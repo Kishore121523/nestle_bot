@@ -12,7 +12,7 @@ const Navbar = () => {
 
         {/* Left Nav */}
         <div className="flex items-center gap-8">
-          <Image src="/assets/logo.png" alt="Nestlé Logo" width={70} height={60} className="rounded-full" />
+          <Image src="/assets/logo.png" alt="Nestlé Logo" width={60} height={60} className="rounded-full" />
           <div className="hidden md:flex items-center gap-6 text-muted-foreground">
             <a href="#" className="hover:text-foreground transition">Brand</a>
             <a href="#" className="hover:text-foreground transition">All Recipes</a>

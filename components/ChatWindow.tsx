@@ -63,7 +63,7 @@ export default function ChatWindow({
             <span>{icon}</span> {name}
             <button
               onClick={onOpenSettings}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground cursor-pointer"
               aria-label="Open settings"
             >
               <Settings2 className="w-4 h-4" />
