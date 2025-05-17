@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, KeyboardEvent } from "react";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings2 } from "lucide-react";
+import { Minus, SendHorizonal, Settings2 } from "lucide-react";
+import { Input } from "./ui/input";
+import CustomBtn from "./CustomBtn";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface Message {
   role: "user" | "assistant";
@@ -35,8 +37,9 @@ export default function ChatWindow({
   onOpenSettings,
 }: ChatWindowProps) {
   const [input, setInput] = useState("");
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim()) {
@@ -46,85 +49,105 @@ export default function ChatWindow({
     }
   };
 
-  if (!open) return null;
-
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        transition={{ duration: 0.2 }}
-        className="fixed bottom-24 right-6 z-50 w-[350px] sm:w-[400px] bg-card text-card-foreground border border-border rounded-xl shadow-lg p-4 flex flex-col"
-      >
-
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="font-semibold text-base flex items-center gap-2">
-            <span>{icon}</span> {name}
-            <button
-              onClick={onOpenSettings}
-              className="text-muted-foreground hover:text-foreground cursor-pointer"
-              aria-label="Open settings"
-            >
-              <Settings2 className="w-4 h-4" />
-            </button>
-          </h2>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onEndChat}
-              className="text-xs hover:underline text-destructive cursor-pointer"
-            >
-              End Chat
-            </button>
-            <button
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground text-sm cursor-pointer"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={4}
+      {open && (
+        <motion.div
+          key="chat-window"
+          initial={{ opacity: 0, x: 0, y: 50, scale: 0.95 }}
+          animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 50, y: 50, scale: 0.8 }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 25,
+            duration: 0.25,
+          }}
+          className="fixed bottom-24 right-6 z-50 w-[350px] sm:w-[400px] bg-card text-card-foreground border border-border rounded-xl shadow-lg p-4 flex flex-col"
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="font-semibold text-base flex items-center gap-2">
+              <span>{icon}</span> {name}
+              <button
+                onClick={onOpenSettings}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label="Open settings"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+                <Settings2 className="w-4 h-4" />
+              </button>
+            </h2>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setConfirmEnd(true)}
+                className="text-xs hover:underline text-destructive cursor-pointer"
+              >
+                End Chat
+              </button>
+              <button
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground text-sm cursor-pointer"
+                aria-label="Minimize chat"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        
-        <ScrollArea className="h-92 rounded border border-muted bg-muted p-2 mb-3 space-y-2">
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`max-w-[85%] px-3 py-2 rounded-md text-sm mb-3 ${
-                msg.role === "user"
-                  ? "ml-auto bg-accent text-accent-foreground"
-                  : "bg-background text-foreground"
-              }`}
+          <ScrollArea className="h-92 rounded border border-muted bg-muted p-2 mb-3 space-y-2">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`max-w-[85%] px-3 py-2 rounded-md text-sm mb-3 ${
+                  msg.role === "user"
+                    ? "ml-auto bg-accent text-accent-foreground"
+                    : "bg-background text-foreground"
+                }`}
+              >
+                {msg.content}
+              </div>
+            ))}
+            {isTyping && (
+              <div className="w-fit bg-background text-muted-foreground text-xs px-3 py-2 rounded-md animate-pulse">
+                <span className="animate-pulse">● ● ●</span>
+              </div>
+            )}
+          </ScrollArea>
+
+          <div className="flex items-center gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask something..."
+              className="flex-1 bg-input text-foreground placeholder-muted-foreground"
+            />
+
+            <CustomBtn
+              onClick={() => {
+                if (input.trim()) {
+                  onSendMessage(input.trim());
+                  setInput("");
+                }
+              }}
+              className="p-2 rounded-md cursor-pointer"
+              aria-label="Send message"
             >
-              {msg.content}
-            </div>
-          ))}
-          {isTyping && (
-            <div className="w-fit bg-background text-muted-foreground text-xs px-3 py-2 rounded-md animate-pulse">
-              <span className="animate-pulse">● ● ●</span>
-            </div>
-          )}
-        </ScrollArea>
+              <SendHorizonal className="h-4 w-4" />
+            </CustomBtn>
+          </div>
 
-        
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask something..."
-          className="resize-none bg-input text-foreground placeholder-muted-foreground"
-          rows={2}
-        />
-      </motion.div>
+          {confirmEnd && (
+              <ConfirmDialog
+                onCancel={() => setConfirmEnd(false)}
+                onConfirm={() => {
+                  setConfirmEnd(false);
+                  onEndChat();
+                }}
+              />
+            )}
+
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }

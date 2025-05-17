@@ -64,7 +64,7 @@ export default function ChatSettings({ open, onClose, onSave }: ChatSettingsProp
           </div>
 
           <CustomBtn onClick={handleSave} className="w-full mt-4">
-            Save Settings
+            Save Changes
           </CustomBtn>
         </div>
       </DialogContent>
