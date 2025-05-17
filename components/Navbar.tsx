@@ -2,7 +2,7 @@ import React from 'react'
 import { useState } from "react";
 import Image from 'next/image';
 import { Input } from "@/components/ui/input";
-import { Button } from './ui/button';
+import CustomBtn from './CustomBtn';
 
 const Navbar = () => {
     const [lang, setLang] = useState<"EN" | "FR">("EN");
@@ -29,16 +29,14 @@ const Navbar = () => {
         />
 
           <a href="#" className="text-muted-foreground hover:text-foreground transition">Support</a>
-          <Button
-          className="text-foreground bg-muted hover:bg-foreground hover:text-background cursor-pointer transition text-[14px]">Sign Up</Button>
+          <CustomBtn>Sign Up</CustomBtn>
+
           <div className="h-6 w-px bg-foreground" />
 
-          <Button
-            className="text-foreground bg-muted hover:bg-foreground hover:text-background cursor-pointer transition text-[14px]"
-            onClick={() => setLang(lang === "EN" ? "FR" : "EN")}
-          >
+          <CustomBtn onClick={() => setLang(lang === "EN" ? "FR" : "EN")}>
             {lang}
-          </Button>
+          </CustomBtn>
+
         </div>
       </nav>
   )
