@@ -7,7 +7,7 @@ import "dotenv/config";
 async function main() {
   console.log("Fetching scraped data...");
 
-  const res = await fetch(process.env.FETCH_API_URL!);
+  const res = await fetch("http://localhost:3000/api/scrape");
   const data = await res.json();
 
   if (!data.success) {
@@ -17,6 +17,7 @@ async function main() {
 
   const allChunks: ChunkInput[] = [];
 
+  // Home page
   if (data.textChunks && data.textChunks.length) {
     data.textChunks.forEach((chunk: string, i: number) => {
       allChunks.push({
@@ -28,6 +29,7 @@ async function main() {
     });
   }
 
+  // Subpages
   if (data.crawledPages && Array.isArray(data.crawledPages)) {
     for (const page of data.crawledPages) {
       if (page.chunks && page.chunks.length) {
