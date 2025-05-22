@@ -1,4 +1,5 @@
 import { AzureOpenAI } from "openai";
+import "dotenv/config";
 
 export type ExtractedEntities = {
   products?: string[];

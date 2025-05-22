@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { SearchClient, AzureKeyCredential } from "@azure/search-documents";
 import { OpenAI } from "openai";
 import { NestleDocument } from "@/lib/embedding/uploadToSearch";
+import { getEntitiesForChunk } from "@/lib/graph/getEntitiesForChunk";
 
-// Setup client
+// Setup OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
   baseURL: process.env.OPENAI_API_BASE!,
@@ -15,6 +16,7 @@ const openai = new OpenAI({
   },
 });
 
+// Setup Azure Search client
 const searchClient = new SearchClient<NestleDocument>(
   process.env.AZURE_SEARCH_ENDPOINT!,
   process.env.AZURE_SEARCH_INDEX!,
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get embedding for query
+    // Get OpenAI embedding for the query
     const embeddingResponse = await openai.embeddings.create({
       model: process.env.OPENAI_EMBEDDING_MODEL!,
       input: query,
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     const queryEmbedding = embeddingResponse.data[0].embedding;
 
-    // Perform (vector + keyword) search in our Azure Search index
+    // Search in Azure Cognitive Search
     const results = await searchClient.search(query, {
       top,
       vectorSearchOptions: {
@@ -56,15 +58,21 @@ export async function POST(req: NextRequest) {
       select: ["id", "content", "sourceUrl", "chunkIndex"],
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const matches: any[] = [];
+    // Enrich each match with graph data
+    const matches = [];
+
     for await (const result of results.results) {
+      const { id, content, sourceUrl, chunkIndex } = result.document;
+
+      const entities = await getEntitiesForChunk(id); // Neo4j enrichment
+
       matches.push({
-        id: result.document.id,
+        id,
         score: result.score,
-        content: result.document.content,
-        sourceUrl: result.document.sourceUrl,
-        chunkIndex: result.document.chunkIndex,
+        content,
+        sourceUrl,
+        chunkIndex,
+        entities, // Includes { Product, Ingredient, Topic, Category }
       });
     }
 

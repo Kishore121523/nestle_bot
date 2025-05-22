@@ -20,6 +20,7 @@
     "dotenv": "^16.5.0",
     "framer-motion": "^12.12.1",
     "lucide-react": "^0.510.0",
+    "neo4j-driver": "^5.28.1",
     "next": "15.3.2",
     "openai": "^4.100.0",
     "p-limit": "^6.2.0",
