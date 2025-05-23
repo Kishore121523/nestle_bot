@@ -7,7 +7,8 @@ import "dotenv/config";
 async function main() {
   console.log("Fetching scraped data...");
 
-  const res = await fetch("http://localhost:3000/api/scrape");
+  // Fetch scraped data from the API
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/scrape`);
   const data = await res.json();
 
   if (!data.success) {
@@ -29,7 +30,7 @@ async function main() {
     });
   }
 
-  // Subpages
+  // Subpages found inside the home page
   if (data.crawledPages && Array.isArray(data.crawledPages)) {
     for (const page of data.crawledPages) {
       if (page.chunks && page.chunks.length) {

@@ -2,6 +2,7 @@ import { OpenAI } from "openai";
 
 let openai: OpenAI | null = null;
 
+// This function generates an embedding for a given input string using OpenAI's ada-002 model.
 export async function generateEmbedding(input: string): Promise<number[]> {
   if (!openai) {
     openai = new OpenAI({

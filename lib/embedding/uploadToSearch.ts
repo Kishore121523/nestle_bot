@@ -13,6 +13,7 @@ export interface NestleDocument {
 
 let searchClient: SearchClient<NestleDocument> | null = null;
 
+// This function initializes the Azure Search client with the provided credentials
 function getSearchClient(): SearchClient<NestleDocument> {
   const endpoint = process.env.AZURE_SEARCH_ENDPOINT!;
   const indexName = process.env.AZURE_SEARCH_INDEX!;
@@ -40,6 +41,7 @@ export type ChunkInput = {
   scrapedAt: string;
 };
 
+// This function uploads chunks of text to Azure Search
 export async function uploadChunksWithEmbeddings(chunks: ChunkInput[]) {
   const client = getSearchClient();
   const docs: NestleDocument[] = [];

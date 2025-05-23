@@ -46,16 +46,15 @@ async function fetchAllChunks(): Promise<ChunkDocument[]> {
 }
 
 async function main() {
-  console.log("📥 Fetching all chunks from Azure Search...");
+  console.log("Fetching all chunks from Azure Search...");
   const chunks = await fetchAllChunks();
-  // const chunks = await fetchAllChunks();
-  console.log(`✅ Loaded ${chunks.length} chunks`);
+  console.log(`Loaded ${chunks.length} chunks`);
 
   const output: EntityResult[] = [];
 
   for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
     const batch = chunks.slice(i, i + BATCH_SIZE);
-    console.log(`🔁 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}...`);
+    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}...`);
 
     const promises = batch.map((chunk) =>
       extractEntitiesFromText(chunk.content).then((entities) => ({
@@ -69,9 +68,9 @@ async function main() {
     for (const result of results) {
       if (result.status === "fulfilled") {
         output.push(result.value);
-        console.log(`✅ Extracted for ID: ${result.value.id}`);
+        console.log(`Extracted for ID: ${result.value.id}`);
       } else {
-        console.error("❌ Entity extraction failed:", result.reason);
+        console.error("Entity extraction failed:", result.reason);
       }
     }
 
@@ -81,9 +80,9 @@ async function main() {
   await fs.mkdir("./data", { recursive: true });
   await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2));
 
-  console.log(`📁 Saved all extracted entities to ${OUTPUT_FILE}`);
+  console.log(`Saved all extracted entities to ${OUTPUT_FILE}`);
 }
 
 main().catch((err) => {
-  console.error("❌ Script failed:", err);
+  console.error("Script failed:", err);
 });

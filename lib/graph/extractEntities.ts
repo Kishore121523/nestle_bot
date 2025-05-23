@@ -38,7 +38,7 @@ Example output:
 }`;
 
     const response = await client.chat.completions.create({
-      model: deployment, // this should match the deployment name
+      model: deployment,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: text },

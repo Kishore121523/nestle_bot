@@ -19,6 +19,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",
     "framer-motion": "^12.12.1",
+    "fuse.js": "^7.1.0",
     "lucide-react": "^0.510.0",
     "neo4j-driver": "^5.28.1",
     "next": "15.3.2",
