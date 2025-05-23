@@ -1,8 +1,16 @@
+/*
+ * GRAPH-RAG: Answer Generation API
+  1. Accepts a query from user.
+  2. Calls the GraphRAG-based `/api/search` endpoint to retrieve top relevant chunks.
+  3. Constructs a contextual prompt using those chunks.
+  4. Uses Azure OpenAI o3-mini to generate a natural language answer grounded in the context.
+*/
+
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 import "dotenv/config";
 
-// Setup OpenAI
+// Configure Azure OpenAI client
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
 const apiKey = process.env.AZURE_O3_MINI_KEY!;
 const apiVersion = process.env.AZURE_O3_MINI_API_VERSION!;
@@ -26,7 +34,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 1: Call /api/search
+    // Retrieve top-k context chunks using GraphRAG search
     const searchRes = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
       {
@@ -46,7 +54,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Step 2: Construct prompt
+    // Build context from retrieved chunks
     const context = matches
       .map(
         (m: { content: string }, i: number) =>
@@ -56,15 +64,15 @@ export async function POST(req: NextRequest) {
 
     const prompt = `You are a helpful assistant answering questions based on information from the Nestlé Canada website.
 
-      Context:
-      ${context}
+    Context:
+    ${context}
 
-      Question:
-      ${query}
+    Question:
+    ${query}
 
-      Answer in a clear, helpful way:`;
+    Answer in a clear, helpful way:`;
 
-    // Step 3: Ask OpenAI
+    // Send prompt to o3-mini and generate response
     const completion = await client.chat.completions.create({
       model: deployment,
       messages: [

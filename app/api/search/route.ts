@@ -1,30 +1,38 @@
+/**
+  GRAPH-RAG: Hybrid Retrieval + Graph-Aware Reranking
+
+  This API route handles search queries by:
+  1. Generating an embedding from the user's query via OpenAI - ada-002 model.
+  2. Performing a vector search on Azure Cognitive Search (Azure AI Search) to retrieve relevant content chunks.
+  3. Expanding query keywords using synonym maps (to simulate NLU).
+  4. Looking up associated entities from Neo4j for each chunk (products, categories, etc.).
+  5. Scoring results based on both vector similarity and graph-entity overlap.
+  6. Returning the most relevant results sorted by final hybrid score.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { SearchClient, AzureKeyCredential } from "@azure/search-documents";
 import { OpenAI } from "openai";
 import { NestleDocument } from "@/lib/embedding/uploadToSearch";
 import { getEntitiesForChunk } from "@/lib/graph/getEntitiesForChunk";
-import { stopwords } from "@/lib/utils";
+import { stopwords, synonymMap } from "@/lib/utils";
 
-// Setup OpenAI client
+// Setup OpenAI - ada-002 model client for embedding generation
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
   baseURL: process.env.OPENAI_API_BASE!,
-  defaultHeaders: {
-    "api-key": process.env.OPENAI_API_KEY!,
-  },
-  defaultQuery: {
-    "api-version": process.env.OPENAI_API_VERSION!,
-  },
+  defaultHeaders: { "api-key": process.env.OPENAI_API_KEY! },
+  defaultQuery: { "api-version": process.env.OPENAI_API_VERSION! },
 });
 
-// Azure Search client
+// Azure Search client to query the indexed document chunks
 const searchClient = new SearchClient<NestleDocument>(
   process.env.AZURE_SEARCH_ENDPOINT!,
   process.env.AZURE_SEARCH_INDEX!,
   new AzureKeyCredential(process.env.AZURE_SEARCH_KEY!)
 );
 
-// Keyword overlap scoring
+// This function compares keywords against chunk entities and returns a numeric score
 function getEntityMatchScore(
   entities: Record<string, string[]>,
   keywords: string[]
@@ -41,15 +49,8 @@ function getEntityMatchScore(
   return score;
 }
 
-// Expand static synonyms
+// Expands input keywords using a fixed synonym map (acts as a lightweight NLU layer)
 function expandKeywords(keywords: string[]): string[] {
-  const synonymMap: Record<string, string[]> = {
-    kids: ["children", "youth", "toddlers"],
-    drink: ["beverage", "shake", "smoothie"],
-    healthy: ["nutritious", "balanced", "immune"],
-    mother: ["mom", "parent", "maternity", "prenatal"],
-  };
-
   const expanded = new Set(keywords);
   for (const word of keywords) {
     const synonyms = synonymMap[word];
@@ -60,12 +61,13 @@ function expandKeywords(keywords: string[]): string[] {
   return Array.from(expanded);
 }
 
-// Helper to remove junk results
+// Removes noisy results from search like pagination and search pages
 function isCleanSourceUrl(url: string): boolean {
   const lower = url.toLowerCase();
   return !lower.includes("/search") && !lower.includes("page=");
 }
 
+// Main route handler
 export async function POST(req: NextRequest) {
   try {
     const { query, top = 5 } = await req.json();
@@ -77,6 +79,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Extract + clean keywords
     const baseKeywords = query
       .toLowerCase()
       .split(/\W+/)
@@ -84,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     const keywords = expandKeywords(baseKeywords);
 
-    // Step 2: Generate embedding
+    // Generate embedding from OpenAI
     const embeddingResponse = await openai.embeddings.create({
       model: process.env.OPENAI_EMBEDDING_MODEL!,
       input: query,
@@ -96,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     const queryEmbedding = embeddingResponse.data[0].embedding;
 
-    // Step 3: Hybrid search (no filter here — we'll clean manually)
+    // Perform vector search in Azure AI Search
     const results = await searchClient.search(query, {
       top,
       vectorSearchOptions: {
@@ -112,12 +115,16 @@ export async function POST(req: NextRequest) {
       select: ["id", "content", "sourceUrl", "chunkIndex"],
     });
 
-    // Step 4: Enrich with entities and rerank
+    // For each result, fetch Neo4j entities and rerank
     const matches = [];
 
     for await (const result of results.results) {
       const { id, content, sourceUrl, chunkIndex } = result.document;
+
+      // Get graph-linked entities for this chunk
       const entities = await getEntitiesForChunk(id);
+
+      // Rerank using graph entity match
       const entityScore = getEntityMatchScore(entities, keywords);
       const finalScore = result.score + entityScore * 0.1;
 
@@ -133,17 +140,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Step 5: Filter out junk sourceUrls + low scores
+    // Filter out junk + low confidence results
     const filtered = matches.filter(
       (m) => isCleanSourceUrl(m.sourceUrl) && m.finalScore >= 0.1
     );
 
-    const dropped = matches.length - filtered.length;
-
-    // Logging
+    // Debug logs for dev
     console.log("QUERY:", query);
     console.log("KEYWORDS:", keywords);
-    console.log("DROPPED:", dropped);
+    console.log("DROPPED:", matches.length - filtered.length);
     console.log(
       "RANKED:",
       filtered.map((m) => ({

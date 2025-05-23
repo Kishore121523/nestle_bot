@@ -87,3 +87,70 @@ export const stopwords = new Set([
   "does",
   "did",
 ]);
+
+// Synonyms
+export const synonymMap: Record<string, string[]> = {
+  boost: [
+    "boost®",
+    "boost® kids",
+    "boost® kids essentials",
+    "boost® kids essentials chocolate",
+    "boost® kids essentials vanilla",
+  ],
+  aero: [
+    "aero",
+    "aero brownies",
+    "aero bubbly hot chocolate",
+    "aero chocolate - feel the bubbles melt",
+    "aero duo",
+  ],
+  nutritional: [
+    "nutritional benefits of milk",
+    "nutritional beverages",
+    "nutritional drinks",
+    "nutritional enrichment",
+    "nutritional information (1 serving = 35 calories or less)",
+  ],
+  cocoa: [
+    "cocoa",
+    "cocoa butter",
+    "cocoa farming",
+    "cocoa farming support",
+    "cocoa powder",
+  ],
+  sustainable: [
+    "sustainable agriculture",
+    "sustainable cocoa farming practices",
+    "sustainable coffee farming",
+    "sustainable cuisine",
+    "sustainable cultivation",
+  ],
+  global: ["global", "global connectivity", "global recipes"],
+  food: [
+    "food banks canada partnership",
+    "food communications",
+    "food factory",
+    "food network canada",
+    "food preservation",
+  ],
+  nestle: [
+    "nestlé",
+    "nestlé aero novelty bunny 94g",
+    "nestlé aero truffle brownie 105 g bar",
+    "nestlé baby & me",
+    "nestlé brands",
+  ],
+  hot: [
+    "hot and iced chocolate",
+    "hot chocolate",
+    "hot chocolate recipe",
+    "hot chocolate recipes",
+  ],
+  vanilla: [
+    "vanilla",
+    "vanilla bean",
+    "vanilla bean ice cream",
+    "vanilla beans",
+    "vanilla caramel half dipped frozen dessert bars",
+  ],
+};

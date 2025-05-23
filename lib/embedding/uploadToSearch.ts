@@ -63,8 +63,7 @@ export async function uploadChunksWithEmbeddings(chunks: ChunkInput[]) {
     }
   }
 
-  console.log(`Uploading ${docs.length} documents to Azure Search...`);
+  console.log(`Uploading ${docs.length} documents to Azure Search`);
   const result = await client.uploadDocuments(docs);
-
   console.log(`Uploaded ${result.results.length} documents to Azure Search.`);
 }

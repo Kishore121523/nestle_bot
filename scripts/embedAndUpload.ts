@@ -1,3 +1,5 @@
+// Run using - npx ts-node -P tsconfig.script.json scripts/embedAndUpload.ts
+
 import {
   uploadChunksWithEmbeddings,
   ChunkInput,

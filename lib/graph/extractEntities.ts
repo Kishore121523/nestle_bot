@@ -8,7 +8,7 @@ export type ExtractedEntities = {
   topics?: string[];
 };
 
-// Azure OpenAI Configuration
+// Azure o3-mini client
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
 const apiKey = process.env.AZURE_O3_MINI_KEY!;
 const apiVersion = process.env.AZURE_O3_MINI_API_VERSION!;
@@ -26,22 +26,23 @@ export async function extractEntitiesFromText(
 ): Promise<ExtractedEntities | null> {
   try {
     const systemPrompt = `
-You are an entity extraction agent.
-From the given text, extract named entities relevant to the Nestlé website domain.
-Return a JSON object with keys like 'products', 'categories', 'ingredients', and 'topics'.
+    You are an entity extraction agent.
+    From the given text, extract named entities relevant to the Nestlé website domain.
+    Return a JSON object with keys like 'products', 'categories', 'ingredients', and 'topics'.
 
-Example output:
-{
-  "products": ["BOOST Kids Essentials"],
-  "categories": ["nutritional supplements"],
-  "ingredients": ["protein", "fibre", "vitamins", "minerals"]
-}`;
+    Example output:
+    {
+      "products": ["BOOST Kids Essentials"],
+      "categories": ["nutritional supplements"],
+      "ingredients": ["protein", "fibre", "vitamins", "minerals"]
+      "topics": ["nutrition", "health", "wellness"]
+    }`;
 
     const response = await client.chat.completions.create({
       model: deployment,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: text },
+        { role: "user", content: text }, // The text to extract entities
       ],
       max_completion_tokens: 100000,
     });
