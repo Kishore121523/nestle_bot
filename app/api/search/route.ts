@@ -146,18 +146,18 @@ export async function POST(req: NextRequest) {
     );
 
     // Debug logs for dev
-    console.log("QUERY:", query);
-    console.log("KEYWORDS:", keywords);
-    console.log("DROPPED:", matches.length - filtered.length);
-    console.log(
-      "RANKED:",
-      filtered.map((m) => ({
-        id: m.id,
-        score: m.score,
-        entityScore: m.entityScore,
-        finalScore: m.finalScore,
-      }))
-    );
+    // console.log("QUERY:", query);
+    // console.log("KEYWORDS:", keywords);
+    // console.log("DROPPED:", matches.length - filtered.length);
+    // console.log(
+    //   "RANKED:",
+    //   filtered.map((m) => ({
+    //     id: m.id,
+    //     score: m.score,
+    //     entityScore: m.entityScore,
+    //     finalScore: m.finalScore,
+    //   }))
+    // );
 
     return NextResponse.json({ success: true, matches: filtered });
   } catch (err) {

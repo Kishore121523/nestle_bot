@@ -1,5 +1,6 @@
 /*
  * GRAPH-RAG: Answer Generation API
+
   1. Accepts a query from user.
   2. Calls the GraphRAG-based `/api/search` endpoint to retrieve top relevant chunks.
   3. Constructs a contextual prompt using those chunks.
