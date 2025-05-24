@@ -154,3 +154,33 @@ export const synonymMap: Record<string, string[]> = {
     "vanilla caramel half dipped frozen dessert bars",
   ],
 };
+
+// Type out text
+export function typeOutText(
+  fullText: string,
+  callback: (chunk: string) => void,
+  done: () => void,
+  delay = 10
+) {
+  let i = 0;
+  function type() {
+    if (i < fullText.length) {
+      callback(fullText.slice(0, i + 1));
+      i++;
+      setTimeout(type, delay);
+    } else {
+      done();
+    }
+  }
+  type();
+}
+
+// Auto format text
+export function autoFormat(text: string): string {
+  return text
+    .replace(/([0-9]+\.)/g, "\n\n$1") // start new paragraph before numbered lists
+    .replace(/•/g, "\n•") // line break before bullets
+    .replace(/(Recipe|How to prepare)/gi, "\n\n$1") // emphasize section headers
+    .replace(/\s{2,}/g, " ") // clean extra spaces
+    .trim();
+}

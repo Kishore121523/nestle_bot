@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 import "dotenv/config";
+import { autoFormat } from "@/lib/utils";
 
 // Configure Azure OpenAI client
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
@@ -63,7 +64,8 @@ export async function POST(req: NextRequest) {
       )
       .join("\n\n");
 
-    const prompt = `You are a helpful assistant answering questions based on information from the Nestlé Canada website.
+    const prompt = `You are a helpful assistant answering questions based on information from the Nestlé Canada website. Also, Answer in well-structured, readable paragraphs. Use bullet points, headings, or line breaks for lists and recipes when appropriate.
+
 
     Context:
     ${context}
@@ -83,9 +85,28 @@ export async function POST(req: NextRequest) {
       max_completion_tokens: 100000,
     });
 
-    const answer = completion.choices[0]?.message?.content?.trim();
+    const answer = autoFormat(completion.choices[0]?.message?.content?.trim());
 
-    return NextResponse.json({ success: true, answer });
+    return NextResponse.json({
+      success: true,
+      answer,
+      sources: matches.map(
+        (m: {
+          id: string;
+          sourceUrl: string;
+          chunkIndex: number;
+          entities: string[];
+          score: number;
+          content: string;
+        }) => ({
+          id: m.id,
+          sourceUrl: m.sourceUrl,
+          chunkIndex: m.chunkIndex,
+          entities: m.entities,
+          score: m.score,
+        })
+      ),
+    });
   } catch (err) {
     console.error("Answer generation error:", err);
     return NextResponse.json(

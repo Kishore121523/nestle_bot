@@ -7,16 +7,19 @@ import { Minus, SendHorizonal, Settings2 } from "lucide-react";
 import { Input } from "./ui/input";
 import CustomBtn from "./CustomBtn";
 import ConfirmDialog from "./ConfirmDialog";
+import { ExpandableSources } from "./ExpandableSources";
+import { typeOutText } from "@/lib/utils";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  sources?: string[];
 }
 
 interface ChatWindowProps {
   open: boolean;
   onClose: () => void;
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage?: (content: string) => Promise<void>;
   onEndChat: () => void;
   messages: Message[];
   isTyping: boolean;
@@ -33,6 +36,7 @@ export default function ChatWindow({
   icon = "💬",
   onOpenSettings,
 }: ChatWindowProps) {
+
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -52,16 +56,46 @@ export default function ChatWindow({
       const data = await res.json();
 
       if (data?.answer) {
-        setMessages((prev) => [...prev, { role: "assistant", content: data.answer }]);
-      } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I couldn't find an answer." }]);
-      }
-    } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong." }]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
+        type Source = { sourceUrl: string };
+        const sourceUrls = Array.isArray(data.sources)
+          ? [...new Set((data.sources as Source[]).map((s) => String(s.sourceUrl)))]
+          : [];
+
+        let tempContent = "";
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+        typeOutText(
+          data.answer,
+          (chunk) => {
+            tempContent = chunk;
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              return [...prev.slice(0, -1), { ...last, content: chunk }];
+            });
+          },
+          () => {
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              return [...prev.slice(0, -1), { ...last, content: tempContent, sources: sourceUrls }];
+            });
+            setIsTyping(false);
+          }
+        );
+              } else {
+                setMessages((prev) => [
+                  ...prev,
+                  { role: "assistant", content: "Sorry, I couldn't find an answer." },
+                ]);
+              }
+            } catch {
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: "Something went wrong." },
+              ]);
+            } finally {
+              setIsTyping(false);
+            }
+          };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -87,7 +121,10 @@ export default function ChatWindow({
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-semibold text-base flex items-center gap-2">
               <span>{icon}</span> {name}
-              <button onClick={onOpenSettings} className="ml-2 text-muted-foreground hover:text-foreground">
+              <button
+                onClick={onOpenSettings}
+                className="ml-2 text-muted-foreground hover:text-foreground"
+              >
                 <Settings2 className="w-4 h-4" />
               </button>
             </h2>
@@ -118,9 +155,13 @@ export default function ChatWindow({
                     : "bg-background text-foreground"
                 }`}
               >
-                {msg.content}
+                <div>{msg.content}</div>
+                {msg.role === "assistant" && Array.isArray(msg.sources) && msg.sources.length > 0 && (
+                  <ExpandableSources sources={msg.sources} />
+                )}
               </div>
             ))}
+
             {isTyping && (
               <div className="w-fit bg-background text-muted-foreground text-xs px-3 py-2 rounded-md animate-pulse">
                 <span className="animate-pulse">● ● ●</span>
