@@ -10,7 +10,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 import "dotenv/config";
-import { autoFormat } from "@/lib/utils";
 
 // Configure Azure OpenAI client
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
@@ -64,16 +63,30 @@ export async function POST(req: NextRequest) {
       )
       .join("\n\n");
 
-    const prompt = `You are a helpful assistant answering questions based on information from the Nestlé Canada website. Also, Answer in well-structured, readable paragraphs. Use bullet points, headings, or line breaks for lists and recipes when appropriate.
+    const prompt = `You are a helpful assistant that answers questions using only the provided context from the Nestlé Canada website.
 
+Your response must follow this strict formatting in **Markdown**:
 
-    Context:
-    ${context}
+- Start with a clear, short introductory paragraph.
+- Use **numbered or bulleted lists** where relevant.
+- Each list item should have:
+  - A **bolded title** (e.g., product name, recipe, or concept)
+  - A new line with its short description.
+- For any instructions, nutrition facts, or ingredients, use **indented sub-bullets** below the main item.
+- **Embed links naturally** in the descriptions using '[link text](url)' format — do not paste raw URLs.
+- Add line breaks ('\n\n') between items and sections for clarity.
+- End with a summary or call-to-action if appropriate.
 
-    Question:
-    ${query}
+Avoid any filler phrases or information not supported by the context.
 
-    Answer in a clear, helpful way:`;
+Context:
+${context}
+
+Question:
+${query}
+
+Respond in clean Markdown with clear paragraph spacing.
+`;
 
     // Send prompt to o3-mini and generate response
     const completion = await client.chat.completions.create({
@@ -85,7 +98,7 @@ export async function POST(req: NextRequest) {
       max_completion_tokens: 100000,
     });
 
-    const answer = autoFormat(completion.choices[0]?.message?.content?.trim());
+    const answer = completion.choices[0]?.message?.content?.trim() ?? "";
 
     return NextResponse.json({
       success: true,

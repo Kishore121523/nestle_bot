@@ -1,54 +1,54 @@
-// Run using - npx ts-node -P tsconfig.script.json scripts/embedAndUpload.ts
-
+// scripts/embedAndUpload.ts
+import fs from "fs/promises";
+import path from "path";
 import {
   uploadChunksWithEmbeddings,
   ChunkInput,
 } from "../lib/embedding/uploadToSearch";
 import "dotenv/config";
 
-async function main() {
-  console.log("Fetching scraped data...");
+const INPUT_PATH = path.join(__dirname, "filteredOutput.json");
 
-  // Fetch scraped data from the API
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/scrape`);
-  const data = await res.json();
+interface ScrapedData {
+  success: boolean;
+  textChunks?: string[];
+  crawledPages?: { url: string; chunks: string[] }[];
+}
+
+async function main() {
+  console.log("Reading scraped content from file...");
+
+  const raw = await fs.readFile(INPUT_PATH, "utf-8");
+  const data: ScrapedData = JSON.parse(raw);
 
   if (!data.success) {
-    console.error("Failed to get scraped data:", data.error);
+    console.error("Invalid scraped file: success=false");
     return;
   }
 
   const allChunks: ChunkInput[] = [];
 
-  // Home page
-  if (data.textChunks && data.textChunks.length) {
-    data.textChunks.forEach((chunk: string, i: number) => {
+  data.textChunks?.forEach((chunk, i) => {
+    allChunks.push({
+      content: chunk,
+      sourceUrl: "https://www.madewithnestle.ca",
+      chunkIndex: i,
+      scrapedAt: new Date().toISOString(),
+    });
+  });
+
+  data.crawledPages?.forEach((page) => {
+    page.chunks?.forEach((chunk, i) => {
       allChunks.push({
         content: chunk,
-        sourceUrl: "https://www.madewithnestle.ca",
+        sourceUrl: page.url,
         chunkIndex: i,
         scrapedAt: new Date().toISOString(),
       });
     });
-  }
+  });
 
-  // Subpages found inside the home page
-  if (data.crawledPages && Array.isArray(data.crawledPages)) {
-    for (const page of data.crawledPages) {
-      if (page.chunks && page.chunks.length) {
-        page.chunks.forEach((chunk: string, i: number) => {
-          allChunks.push({
-            content: chunk,
-            sourceUrl: page.url,
-            chunkIndex: i,
-            scrapedAt: new Date().toISOString(),
-          });
-        });
-      }
-    }
-  }
-
-  console.log(`Total chunks to embed: ${allChunks.length}`);
+  console.log(`Total chunks to upload: ${allChunks.length}`);
   await uploadChunksWithEmbeddings(allChunks);
 }
 

@@ -42,7 +42,7 @@ export async function extractEntitiesFromText(
       model: deployment,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: text }, // The text to extract entities
+        { role: "user", content: text },
       ],
       max_completion_tokens: 100000,
     });

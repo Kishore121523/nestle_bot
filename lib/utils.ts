@@ -174,13 +174,3 @@ export function typeOutText(
   }
   type();
 }
-
-// Auto format text
-export function autoFormat(text: string): string {
-  return text
-    .replace(/([0-9]+\.)/g, "\n\n$1") // start new paragraph before numbered lists
-    .replace(/•/g, "\n•") // line break before bullets
-    .replace(/(Recipe|How to prepare)/gi, "\n\n$1") // emphasize section headers
-    .replace(/\s{2,}/g, " ") // clean extra spaces
-    .trim();
-}

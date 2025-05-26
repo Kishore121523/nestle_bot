@@ -25,7 +25,7 @@ export function ExpandableSources({ sources }: { sources: string[] }) {
           >
             <ul>
             {sources.map((url, i) => {
-            const displayUrl = url.length > 38 ? url.slice(0, 38) + "..." : url;
+            const displayUrl = url.length > 34 ? url.slice(0, 34) + "..." : url;
             return (
               <li className="flex gap-1" key={i}>
                 - 
@@ -34,7 +34,7 @@ export function ExpandableSources({ sources }: { sources: string[] }) {
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-blue-500 text-[10px] underline break-words opacity-80 hover:opacity-100 transition-opacity"
+                  className="block text-blue-500 text-[12px] underline break-words opacity-80 hover:opacity-100 transition-opacity"
                   title={url}
                 >
                   {displayUrl}

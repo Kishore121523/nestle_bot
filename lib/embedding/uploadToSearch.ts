@@ -13,7 +13,6 @@ export interface NestleDocument {
 
 let searchClient: SearchClient<NestleDocument> | null = null;
 
-// This function initializes the Azure Search client with the provided credentials
 function getSearchClient(): SearchClient<NestleDocument> {
   const endpoint = process.env.AZURE_SEARCH_ENDPOINT!;
   const indexName = process.env.AZURE_SEARCH_INDEX!;
@@ -41,21 +40,41 @@ export type ChunkInput = {
   scrapedAt: string;
 };
 
-// This function uploads chunks of text to Azure Search
-export async function uploadChunksWithEmbeddings(chunks: ChunkInput[]) {
+const BATCH_SIZE = 500;
+const RETRY_LIMIT = 2;
+
+async function uploadBatch(
+  docs: NestleDocument[],
+  batchIndex: number
+): Promise<void> {
   const client = getSearchClient();
-  const docs: NestleDocument[] = [];
+  console.log(`Uploading batch ${batchIndex} with ${docs.length} documents...`);
+  try {
+    const result = await client.uploadDocuments(docs);
+    const failed = result.results.filter((r) => !r.succeeded);
+    if (failed.length > 0) {
+      console.warn(`Batch ${batchIndex} had ${failed.length} failed docs.`);
+    } else {
+      console.log(`Batch ${batchIndex} uploaded successfully.`);
+    }
+  } catch (err) {
+    console.error(`Upload failed for batch ${batchIndex}:`, err);
+    throw err;
+  }
+}
+
+export async function uploadChunksWithEmbeddings(chunks: ChunkInput[]) {
+  const allDocs: NestleDocument[] = [];
 
   for (const chunk of chunks) {
     try {
       const embedding = await generateEmbedding(chunk.content);
-
-      docs.push({
+      allDocs.push({
         id: uuidv4(),
         content: chunk.content,
         vector: embedding,
         sourceUrl: String(chunk.sourceUrl),
-        chunkIndex: String(chunk.chunkIndex ?? ""),
+        chunkIndex: String(chunk.chunkIndex),
         scrapedAt: String(chunk.scrapedAt),
       });
     } catch (err) {
@@ -63,7 +82,32 @@ export async function uploadChunksWithEmbeddings(chunks: ChunkInput[]) {
     }
   }
 
-  console.log(`Uploading ${docs.length} documents to Azure Search`);
-  const result = await client.uploadDocuments(docs);
-  console.log(`Uploaded ${result.results.length} documents to Azure Search.`);
+  console.log(`Prepared ${allDocs.length} documents for Azure upload.`);
+
+  const batches: NestleDocument[][] = [];
+  for (let i = 0; i < allDocs.length; i += BATCH_SIZE) {
+    batches.push(allDocs.slice(i, i + BATCH_SIZE));
+  }
+
+  for (let i = 0; i < batches.length; i++) {
+    let attempt = 0;
+    while (attempt <= RETRY_LIMIT) {
+      try {
+        await uploadBatch(batches[i], i + 1);
+        break;
+      } catch {
+        attempt++;
+        if (attempt > RETRY_LIMIT) {
+          console.error(
+            `Batch ${i + 1} failed after ${RETRY_LIMIT + 1} attempts.`
+          );
+        } else {
+          console.log(`Retrying batch ${i + 1} (attempt ${attempt + 1})...`);
+          await new Promise((res) => setTimeout(res, 1000));
+        }
+      }
+    }
+  }
+
+  console.log("All uploads completed.");
 }

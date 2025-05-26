@@ -24,7 +24,6 @@ export async function GET() {
     const html = await page.content();
     const $ = cheerio.load(html);
 
-    // Extract chunks from homepage
     const homepageChunks = extractChunks(
       $,
       ["main", "article", "section", ".container", ".content", ".wrapper"],
@@ -38,7 +37,6 @@ export async function GET() {
       ]
     );
 
-    // Collect links
     const links: { href: string; text: string }[] = [];
     $("a[href]").each((_, el) => {
       const href = $(el).attr("href");
@@ -46,18 +44,16 @@ export async function GET() {
       if (href && text) links.push({ href, text });
     });
 
-    // Filter internal links
     const internalLinks = Array.from(
       new Set(
         links
           .map((l) => (l.href.startsWith("/") ? BASE_URL + l.href : l.href))
           .filter(
-            (url) => url.startsWith(BASE_URL) && !/\/legal|\/privacy/.test(url)
+            (url) => url.startsWith(BASE_URL) && !/\/(legal|privacy)/.test(url)
           )
       )
     );
 
-    // Collect images
     const images: { src: string; alt: string }[] = [];
     $("img[src]").each((_, el) => {
       const src = $(el).attr("src");
@@ -65,9 +61,8 @@ export async function GET() {
       if (src) images.push({ src, alt });
     });
 
-    // Crawl sub-pages
     const { successful: crawledPages, failed: failedPages } =
-      await runScrapeBatch(internalLinks, 3);
+      await runScrapeBatch(internalLinks, 3, 1); // limit to 2 levels (0 and 1) deep
 
     await browser.close();
 
