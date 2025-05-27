@@ -27,18 +27,22 @@ export async function runScrapeBatch(
       }...`
     );
 
+    // Create promises for each URL in the batch with concurrency limit
     const crawlPromises = batch.map(({ url }) =>
       limit(() => crawlAndScrapePage(url))
     );
 
     const batchResults = await Promise.allSettled(crawlPromises);
 
+    // Process results of the batch
     for (let i = 0; i < batchResults.length; i++) {
       const result = batchResults[i];
       const { url, depth } = batch[i];
 
       if (result.status === "fulfilled") {
         const { chunks, links } = result.value;
+
+        // Check if the chunks are valid and not a 404 page
         const is404 =
           chunks.length === 1 &&
           chunks[0]
@@ -53,6 +57,7 @@ export async function runScrapeBatch(
           console.log(`Skipped ${reason}: ${url}`);
         }
 
+        // If we haven't reached the max depth, add new links to the queue
         if (depth < maxDepth && Array.isArray(links)) {
           for (const link of links) {
             if (!visited.has(link)) {

@@ -61,12 +61,6 @@ function expandKeywords(keywords: string[]): string[] {
   return Array.from(expanded);
 }
 
-// Removes noisy results from search like pagination and search pages
-function isCleanSourceUrl(url: string): boolean {
-  const lower = url.toLowerCase();
-  return !lower.includes("/search") && !lower.includes("page=");
-}
-
 // Main route handler
 export async function POST(req: NextRequest) {
   try {
@@ -140,18 +134,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Filter out junk + low confidence results
-    const filtered = matches.filter(
-      (m) => isCleanSourceUrl(m.sourceUrl) && m.finalScore >= 0.1
-    );
-
     // Debug logs for dev
     // console.log("QUERY:", query);
     // console.log("KEYWORDS:", keywords);
-    // console.log("DROPPED:", matches.length - filtered.length);
     // console.log(
     //   "RANKED:",
-    //   filtered.map((m) => ({
+    //   matches.map((m) => ({
     //     id: m.id,
     //     score: m.score,
     //     entityScore: m.entityScore,
@@ -159,7 +147,7 @@ export async function POST(req: NextRequest) {
     //   }))
     // );
 
-    return NextResponse.json({ success: true, matches: filtered });
+    return NextResponse.json({ success: true, matches: matches });
   } catch (err) {
     console.error("Search error:", err);
     return NextResponse.json(

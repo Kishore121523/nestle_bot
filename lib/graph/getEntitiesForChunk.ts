@@ -10,7 +10,7 @@ export async function getEntitiesForChunk(chunkId: string) {
 
   const query = `
     MATCH (c:Chunk {id: $id})-[r]->(e)
-    RETURN labels(e)[0] AS type, collect(e.displayName) AS entities
+    RETURN toLower(labels(e)[0]) AS type, collect(COALESCE(e.displayName, e.name)) AS entities
   `;
 
   const result = await session.run(query, { id: chunkId });

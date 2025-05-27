@@ -24,6 +24,7 @@ export async function GET() {
     const html = await page.content();
     const $ = cheerio.load(html);
 
+    // Extract main content chunks from the homepage and Exclude common elements like cookie banners, footers, etc.
     const homepageChunks = extractChunks(
       $,
       ["main", "article", "section", ".container", ".content", ".wrapper"],
@@ -44,6 +45,7 @@ export async function GET() {
       if (href && text) links.push({ href, text });
     });
 
+    // Filter and normalize internal links
     const internalLinks = Array.from(
       new Set(
         links

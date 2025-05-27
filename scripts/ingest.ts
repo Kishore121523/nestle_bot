@@ -2,6 +2,7 @@
 
 import fs from "fs/promises";
 import neo4j from "neo4j-driver";
+import "dotenv/config";
 
 // Setting up Neo4j connection
 const NEO4J_URI = process.env.NEO4J_URI!;
@@ -34,6 +35,12 @@ async function ingestData() {
 
   for (const chunk of data) {
     const { id, entities } = chunk;
+
+    if (!entities || typeof entities !== "object") {
+      console.warn(`Skipped chunk: ${id} due to missing or invalid entities`);
+      continue;
+    }
+
     const products = normalizeArray(entities.products || []);
     const categories = normalizeArray(entities.categories || []);
     const ingredients = normalizeArray(entities.ingredients || []);
@@ -65,15 +72,18 @@ async function ingestData() {
       )
     `;
 
-    await session.run(query, {
-      id,
-      products,
-      categories,
-      ingredients,
-      topics,
-    });
-
-    console.log(`Ingested chunk: ${id}`);
+    try {
+      await session.run(query, {
+        id,
+        products,
+        categories,
+        ingredients,
+        topics,
+      });
+      console.log(`Ingested chunk: ${id}`);
+    } catch (err) {
+      console.error(`Failed to ingest chunk: ${id}`, err);
+    }
   }
 
   await session.close();

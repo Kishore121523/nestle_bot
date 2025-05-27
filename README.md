@@ -1,36 +1,189 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Nestlé Canada AI Chatbot
 
-First, run the development server:
+This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate, real-time answers to user queries using hybrid search and a Graph-based Retrieval-Augmented Generation (GraphRAG) system. This solution demonstrates a complete end-to-end pipeline for building and deploying a context-aware chatbot using modern AI, search, and graph technologies.
+
+## Key Features:
+- **Customizable chatbot interface** with support for a **pop-out feature**, **name**, and **icon customization**. A **custom landing page for Nestlé** was designed and developed specifically for this project, with the chatbot fully integrated into the user interface for a seamless experience.
+
+- **Comprehensive website scraping** using **Playwright** and **Cheerio**, capturing all **text, links, images, and tables**.
+
+- **Efficient storage and retrieval** of vectorized content using **Azure Cognitive Search** and **OpenAI embeddings**.
+
+- **Entity extraction**: Products, ingredients, categories, and topics were extracted from each content chunk using the **Azure OpenAI o3-mini model** with an **optimized prompt** for efficiency and accuracy.
+
+- **GraphRAG module** implemented using **Neo4j** to capture and query **relationships between entities** for deeper contextual understanding.
+
+- **Deployed on Microsoft Azure** to ensure **scalable, real-time interactions** with the chatbot interface.
+
+
+
+## Screenshots
+
+![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+
+## Tech Stack
+
+| **Layer**                          | **Technology/Tool**                                               | **Purpose**                                                                 |
+|-------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------|
+| **Frontend**  | Next.js (App Router)                                      | Framework for building the landing page and chatbot UI          |
+|                               | React                                                    | Manages chatbot state, routing, and UI logic                           |
+|                               | Tailwind CSS                                              | Utility-first CSS for responsive and maintainable styling              |
+|                               | ShadCN UI                                                 | Component library for buttons, modals, and form elements               |
+|                               | Framer Motion                                             | Smooth animations for modals and UI transitions                        |
+||||
+| **AI & Retrieval**   | Azure OpenAI (o3-mini)                      | Entity extraction and GPT-based response generation                    |
+|                               | OpenAI Embeddings (`text-embedding-ada-002`)               | Converts content into vector embeddings for similarity search          |
+|                               | Azure Cognitive Search                                     | Hybrid retrieval using text and vector search                          |
+||||
+| **Data Collection & Pipeline**|    Playwright        | Crawls all accessible pages from MadeWithNestle.ca                     |
+|                               | Cheerio                                                   | Parses HTML and extracts structured content                            |
+|                               | Node.js Scripts                                           | Automates scraping, filtering, embedding, and entity extraction        |
+||||
+| **GraphRAG**    | Neo4j                                                     | Stores and queries structured entity relationships                     |
+|                               | Cypher                                                    | Query language used to ingest and link graph nodes semantically        |
+||||
+| **Deployment**      | Microsoft Azure                                           | Hosts chatbot and backend services with real-time scalability          |
+                           
+
+## Installation
+
+Clone the repository and install dependencies using npm:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Kishore121523/nestle_bot.git
+cd nestle_bot
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Usage Instructions
+- **Create a .env file in the root directory:**
+    - **Important**: Never commit your .env file to version control. Replace your-openai-key, your-search-key, and other values with your actual credentials.   
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+    ```bash
+    # Search API
+    NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    # Azure OpenAI
+    OPENAI_API_KEY=your-openai-key
+    OPENAI_API_BASE=your-openai-api-base-url
+    OPENAI_API_VERSION=2023-05-15
+    OPENAI_EMBEDDING_MODEL=embedding-model
 
-## Learn More
+    # Azure Cognitive (AI) Search
+    AZURE_SEARCH_ENDPOINT=your-azure-search-endpoint
+    AZURE_SEARCH_KEY=your-search-key
+    AZURE_SEARCH_INDEX=nestle-index
+    AZURE_SEARCH_API_VERSION=2023-10-01-Preview
 
-To learn more about Next.js, take a look at the following resources:
+    # Azure OpenAI o3-mini Model
+    AZURE_O3_MINI_ENDPOINT=your-o3-mini-endpoint
+    AZURE_O3_MINI_KEY=your-o3-mini-key
+    AZURE_O3_MINI_API_VERSION=2024-12-01-preview
+    AZURE_O3_MINI_DEPLOYMENT_NAME=o3-mini
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    # Neo4j
+    NEO4J_URI=your-neo4j-uri
+    NEO4J_USER=neo4j
+    NEO4J_PASSWORD=your-neo4j-password
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Run the development server and open your browser and navigate to http://localhost:3000 to see the chatbot and landing page.
 
-## Deploy on Vercel
+    ```bash
+    npm run dev
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Optional Scripts for Data Pipeline**
+    - To support hybrid search and GraphRAG capabilities, the following scripts can be executed to scrape, process, embed, extract, and ingest content.
+    - ####  `scrapeAndSave.ts`
+        ```bash
+        npx ts-node -P tsconfig.script.json scripts/scrapeAndSave.ts
+        ```
+        - This script uses Playwright and Cheerio to scrape the full content of MadeWithNestle.ca, including links, text, images, and tables. It saves the structured output to ```scrapedOutput.json```. 
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+    - ####  `filterChunks.ts (Optional)`
+        ```bash
+        npx ts-node -P tsconfig.script.json scripts/filterChunks.ts
+        ```
+        - If you are using the Azure AI Search Free Tier, this script helps reduce the number of chunks and the overall index size to stay within the 50MB limit. If you're using paid Azure Search resources, you can skip this step.
+        - It filters out duplicates, very short/long chunks, and promotional noise (e.g., contests, hashtags). The filtered output is saved as ```filteredOutput.json```.
+
+
+    - #### `embedAndUpload.ts`
+        ```bash
+        npx ts-node -P tsconfig.script.json scripts/embedAndUpload.ts
+        ```
+        - Generates vector embeddings for each chunk using Azure OpenAI’s embedding model and uploads the results to Azure Cognitive Search (Azure AI Search). This step powers the hybrid retrieval system (vector + keyword search).
+
+
+    - ####  `extractAllEntities.ts`
+        ```bash
+        npx ts-node -P tsconfig.script.json scripts/extractAllEntities.ts
+        ```
+        - Uses Azure OpenAI o3-mini to extract entities (products, ingredients, categories, topics) from each chunk currently stored in the Azure AI Search index. The extracted entities are saved in ```nestle_extracted_entities.json```.
+
+
+    - ####  `ingest.ts`
+        ```bash
+        npx ts-node -P tsconfig.script.json scripts/ingest.ts
+        ```
+        - This script ingests the extracted entities from ```nestle_extracted_entities.json``` into a Neo4j graph database. This step enables GraphRAG by representing relationships in a structured and queryable graph format.
+
+        - For each chunk:
+            - Creates a Chunk node.
+            - Uses MERGE to create or re-use Product, Category, Ingredient, and Topic nodes.
+            - Links the chunk to each of these using semantic relationships:
+                - [:MENTIONS_PRODUCT]
+                - [:MENTIONS_CATEGORY]
+                - [:MENTIONS_INGREDIENT]
+                - [:MENTIONS_TOPIC]
+
+        - Uses ON CREATE SET to ensure display names are set only when nodes are created, preserving previously ingested data.
+
+        
+
+
+
+## Performance Optimizations
+
+Several optimizations were implemented throughout the project to ensure performance, maintainability, and user experience:
+
+- ### Code & Performance
+    - **Batch Processing**: All embedding, entity extraction, and ingestion scripts process content in small batches (e.g., 5 chunks at a time) to avoid memory spikes and stay within OpenAI and Azure API rate limits.
+
+    - **Streaming Search Results**: Azure Cognitive Search integration uses async iterators to stream results efficiently, ensuring low memory overhead when retrieving large index datasets.
+
+    - **Duplicate Filtering**: During scraping and chunk filtering, duplicate text blocks are removed to reduce noise and storage redundancy, improving retrieval quality.
+
+    - **Crawl Depth Management**: The scraper is configured with a configurable crawl depth (e.g., depth = 1) to ensure we gather nested and related internal pages without overloading the site or introducing unnecessary page bloat.
+
+    - **URL Deduplication & 404 Handling**: Scraping logic includes deduplication of visited URLs and skips invalid or broken pages (e.g., 404s), optimizing crawl time and reducing error output.
+
+    - **Configurable Filtering**: The `filterChunks.ts` script includes max length constraints and chunk count caps to control output size. This allows the project to remain compliant with Azure's 50MB index size limit on the free tier while preserving meaningful content.
+
+    - **Text Normalization**: All text chunks are cleaned, whitespace-normalized, and validated against length thresholds before embedding, ensuring consistency and quality in vector search results.
+
+    - **Flexible Chunk Structure**: Structured filtering preserves both `textChunks` and `crawledPages` depending on how the data is needed, making the output usable for both indexing and graph-based ingestion.
+
+
+- ### Accessibility & UI
+    - **Keyboard-Navigable Interface**: Chat UI and buttons follow proper focus states for accessibility compliance.
+    - **Theme Consistency**: The design uses a unified Tailwind + ShadCN setup that respects both light and dark modes without visual inconsistencies.
+    - **Semantic HTML Elements**: All interactive elements (e.g., buttons, modals) use proper semantic tags to support screen readers and accessibility tooling.
+
+- ### Code Quality & Reusability
+    - **Modular Script Design**: Data pipeline scripts are isolated, reusable, and parameter-driven—making the system easy to scale or modify.
+    - **Environment-Based Config**: All keys and endpoints are abstracted into `.env` for cleaner code and easier deployment across environments.
+    - **Reusable Components**: Shared UI components like dialogs, buttons, and loaders are abstracted for consistent styling and interaction across the app.
+
+
+## Deployment
+
+To deploy this project run
+
+```bash
+  npm run deploy
+```
+

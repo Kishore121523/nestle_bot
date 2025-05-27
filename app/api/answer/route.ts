@@ -65,28 +65,28 @@ export async function POST(req: NextRequest) {
 
     const prompt = `You are a helpful assistant that answers questions using only the provided context from the Nestlé Canada website.
 
-Your response must follow this strict formatting in **Markdown**:
+    Your response must follow this strict formatting in **Markdown**:
 
-- Start with a clear, short introductory paragraph.
-- Use **numbered or bulleted lists** where relevant.
-- Each list item should have:
-  - A **bolded title** (e.g., product name, recipe, or concept)
-  - A new line with its short description.
-- For any instructions, nutrition facts, or ingredients, use **indented sub-bullets** below the main item.
-- **Embed links naturally** in the descriptions using '[link text](url)' format — do not paste raw URLs.
-- Add line breaks ('\n\n') between items and sections for clarity.
-- End with a summary or call-to-action if appropriate.
+    - Start with a clear, short introductory paragraph.
+    - Use **numbered or bulleted lists** where relevant.
+    - Each list item should have:
+      - A **bolded title** (e.g., product name, recipe, or concept)
+      - A new line with its short description.
+    - For any instructions, nutrition facts, or ingredients, use **indented sub-bullets** below the main item.
+    - **Embed links naturally** in the descriptions using '[link text](url)' format — do not paste raw URLs.
+    - Add line breaks ('\n\n') between items and sections for clarity.
+    - End with a summary or call-to-action if appropriate.
 
-Avoid any filler phrases or information not supported by the context.
+    Avoid any filler phrases or information not supported by the context.
 
-Context:
-${context}
+    Context:
+    ${context}
 
-Question:
-${query}
+    Question:
+    ${query}
 
-Respond in clean Markdown with clear paragraph spacing.
-`;
+    Respond in clean Markdown with clear paragraph spacing.
+    `;
 
     // Send prompt to o3-mini and generate response
     const completion = await client.chat.completions.create({

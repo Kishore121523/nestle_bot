@@ -1,3 +1,5 @@
+// Run using - npx ts-node -P tsconfig.script.json scripts/filterChunks.ts
+
 import fs from "fs/promises";
 import path from "path";
 

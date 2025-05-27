@@ -47,43 +47,57 @@ export default function ChatWindow({
   const sendMessage = async (content: string) => {
     setMessages((prev) => [...prev, { role: "user", content }]);
     setIsTyping(true);
-  
-    const placeholderAnswer = `Here are some gift ideas from Nestlé:
-  
-  1. **KITKAT Advent Calendar**  
-     A festive countdown filled with KITKAT treats — perfect for kids and adults alike. [Buy in Store](https://example.com)
-  
-  2. **TURTLES Holiday Gift Box**  
-     Classic chocolate clusters with a seasonal touch. A perfect gift for those who love caramel and pecans. [See all products](https://example.com)
-  
-  3. **QUALITY STREET Holiday Tin**  
-     A colorful mix of chocolate varieties in a reusable tin. Ideal for sharing with guests or family. [Shop now](https://example.com)
-  
-  These options offer a delicious way to spread joy this holiday season.`;
-  
-    // Simulate typing animation
-    let tempContent = "";
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-  
-    typeOutText(
-      placeholderAnswer,
-      (chunk) => {
-        tempContent = chunk;
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          return [...prev.slice(0, -1), { ...last, content: chunk }];
-        });
-      },
-      () => {
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          return [...prev.slice(0, -1), { ...last, content: tempContent }];
-        });
-        setIsTyping(false);
-      }
-    );
-  };
-  
+
+    try {
+      const res = await fetch("/api/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: content }),
+      });
+
+      const data = await res.json();
+
+      if (data?.answer) {
+        type Source = { sourceUrl: string };
+        const sourceUrls = Array.isArray(data.sources)
+          ? [...new Set((data.sources as Source[]).map((s) => String(s.sourceUrl)))]
+          : [];
+
+        let tempContent = "";
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+        typeOutText(
+          data.answer,
+          (chunk) => {
+            tempContent = chunk;
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              return [...prev.slice(0, -1), { ...last, content: chunk }];
+            });
+          },
+          () => {
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              return [...prev.slice(0, -1), { ...last, content: tempContent, sources: sourceUrls }];
+            });
+            setIsTyping(false);
+          }
+        );
+              } else {
+                setMessages((prev) => [
+                  ...prev,
+                  { role: "assistant", content: "Sorry, I couldn't find an answer." },
+                ]);
+              }
+            } catch {
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: "Something went wrong." },
+              ]);
+            } finally {
+              setIsTyping(false);
+            }
+          };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

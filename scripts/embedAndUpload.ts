@@ -1,4 +1,4 @@
-// scripts/embedAndUpload.ts
+// Run using - npx ts-node -P tsconfig.script.json scripts/embedAndUpload.ts
 import fs from "fs/promises";
 import path from "path";
 import {

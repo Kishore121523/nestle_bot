@@ -25,7 +25,7 @@ type EntityResult = {
 
 const BATCH_SIZE = 5;
 
-// This function fetches all chunks from Azure Search and downloads them into memory.
+// This function fetches all chunks from Azure Search index
 async function fetchAllChunks(): Promise<ChunkDocument[]> {
   const client = new SearchClient<ChunkDocument>(
     AZURE_SEARCH_ENDPOINT,
@@ -35,10 +35,9 @@ async function fetchAllChunks(): Promise<ChunkDocument[]> {
 
   const results: ChunkDocument[] = [];
 
-  // Fetch all chunks from Azure Search and it will return a async iterable called results
   const searchResults = await client.search("*", {
     select: ["id", "content"],
-    top: 300,
+    top: 2500,
   });
 
   for await (const result of searchResults.results) {
@@ -53,13 +52,17 @@ async function fetchAllChunks(): Promise<ChunkDocument[]> {
 async function main() {
   console.log("Fetching all chunks from Azure Search");
   const chunks = await fetchAllChunks();
-  console.log(`Loaded ${chunks.length} chunks`); // 293 chunks
+  console.log(`Loaded ${chunks.length} chunks`);
 
   const output: EntityResult[] = [];
 
+  // Process chunks in batches to avoid overwhelming the entity extraction service
   for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
     const batch = chunks.slice(i, i + BATCH_SIZE);
-    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}...`);
+    console.log(`Processing batch ${batchNum}...`);
+
+    const startTime = Date.now();
 
     const promises = batch.map((chunk) =>
       extractEntitiesFromText(chunk.content).then((entities) => ({
@@ -68,6 +71,7 @@ async function main() {
       }))
     );
 
+    // Used Promise.allSettled to handle individual failures without stopping the batch
     const results = await Promise.allSettled(promises);
 
     for (const result of results) {
@@ -79,11 +83,14 @@ async function main() {
       }
     }
 
-    // Add a delay to avoid hitting the rate limit (since I am in a free trial)
+    const endTime = Date.now();
+    const timeTakenSeconds = ((endTime - startTime) / 1000).toFixed(2);
+    console.log(`Batch ${batchNum} completed in ${timeTakenSeconds} seconds`);
+
     await new Promise((r) => setTimeout(r, 1000));
   }
 
-  // Save the output to a file
+  // Save all extracted entities to output file
   await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2));
   console.log(`Saved all extracted entities to ${OUTPUT_FILE}`);
 }

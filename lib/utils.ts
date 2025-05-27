@@ -88,7 +88,8 @@ export const stopwords = new Set([
   "did",
 ]);
 
-// Synonyms
+// Synonyms - could be expanded or loaded from a file
+// This is a simple synonym map for demonstration purposes
 export const synonymMap: Record<string, string[]> = {
   boost: [
     "boost®",

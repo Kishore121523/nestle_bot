@@ -38,6 +38,7 @@ export async function extractEntitiesFromText(
       "topics": ["nutrition", "health", "wellness"]
     }`;
 
+    // Chat completion request to extract entities
     const response = await client.chat.completions.create({
       model: deployment,
       messages: [

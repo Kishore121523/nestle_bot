@@ -8,6 +8,7 @@ export async function crawlAndScrapePage(url: string) {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
+  // Use a custom user agent to mimic a real browser
   const context = await browser.newContext({
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -44,6 +45,7 @@ export async function crawlAndScrapePage(url: string) {
       ]
     );
 
+    // Extract links from the page
     const links: string[] = [];
     $("a[href]").each((_, el) => {
       const href = $(el).attr("href");

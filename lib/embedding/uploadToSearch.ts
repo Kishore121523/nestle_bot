@@ -43,6 +43,7 @@ export type ChunkInput = {
 const BATCH_SIZE = 500;
 const RETRY_LIMIT = 2;
 
+// Uploads a batch of documents to Azure Search
 async function uploadBatch(
   docs: NestleDocument[],
   batchIndex: number
@@ -52,6 +53,8 @@ async function uploadBatch(
   try {
     const result = await client.uploadDocuments(docs);
     const failed = result.results.filter((r) => !r.succeeded);
+
+    // Log any failed documents
     if (failed.length > 0) {
       console.warn(`Batch ${batchIndex} had ${failed.length} failed docs.`);
     } else {
@@ -63,6 +66,7 @@ async function uploadBatch(
   }
 }
 
+// Uploads chunks with embeddings to Azure Search
 export async function uploadChunksWithEmbeddings(chunks: ChunkInput[]) {
   const allDocs: NestleDocument[] = [];
 
@@ -89,6 +93,7 @@ export async function uploadChunksWithEmbeddings(chunks: ChunkInput[]) {
     batches.push(allDocs.slice(i, i + BATCH_SIZE));
   }
 
+  // If no documents to upload, exit early and retry until retry limit is reached
   for (let i = 0; i < batches.length; i++) {
     let attempt = 0;
     while (attempt <= RETRY_LIMIT) {
