@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, SendHorizonal, Settings2 } from "lucide-react";
+import { Minus, SendHorizonal, Settings2, X } from "lucide-react";
 import { Input } from "./ui/input";
 import CustomBtn from "./CustomBtn";
 import ConfirmDialog from "./ConfirmDialog";
@@ -187,24 +187,25 @@ export default function ChatWindow({
               <span>{icon}</span> {name}
               <button
                 onClick={onOpenSettings}
-                className="ml-2 text-muted-foreground hover:text-foreground"
+                className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <Settings2 className="w-4 h-4" />
               </button>
             </h2>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setConfirmEnd(true)}
-                className="text-xs hover:underline text-destructive"
-              >
-                End Chat
-              </button>
-              <button
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground cursor-pointer border border-muted-foreground bg-transparent rounded-md p-1  hover:bg-foreground hover:text-background transition"
                 aria-label="Minimize"
               >
                 <Minus className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setConfirmEnd(true)}
+                className="text-xs cursor-pointer border border-muted-foreground bg-transparent rounded-md p-1  hover:bg-destructive hover:text-background hover:border-destructive transition"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -222,8 +223,22 @@ export default function ChatWindow({
                   : "bg-background text-foreground"
               }`}
             >
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <div className="markdown-message text-sm leading-normal">
+                <ReactMarkdown
+                  components={{
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    a: ({ node, ...props }) => (
+                      <a
+                        {...props}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline hover:text-primary/80 transition-colors"
+                      />
+                    ),
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
                 </div>
                 {msg.role === "assistant" && Array.isArray(msg.sources) && msg.sources.length > 0 && (
                   <ExpandableSources sources={msg.sources} />
@@ -243,7 +258,7 @@ export default function ChatWindow({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask something..."
-              className="flex-1 bg-input text-foreground"
+              className="flex-1 bg-input text-foreground text-[10px] text-xs border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground focus:outline-none focus:ring-0"
             />
             <CustomBtn
               onClick={() => {

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, top: 5 }),
+        body: JSON.stringify({ query, top: 3 }),
       }
     );
 
@@ -56,12 +56,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Build context from retrieved chunks
-    const context = matches
-      .map(
-        (m: { content: string }, i: number) =>
-          `Chunk ${i + 1}:\n${m.content.trim()}`
-      )
-      .join("\n\n");
+    const contextLines: string[] = [];
+
+    for (let i = 0; i < matches.length; i++) {
+      const content = matches[i].content;
+      if (typeof content === "string") {
+        contextLines.push(`Chunk ${i + 1}:\n${content}`);
+      }
+    }
+
+    const context = contextLines.join("\n\n");
 
     const prompt = `You are a helpful assistant that answers questions using only the provided context from the Nestlé Canada website.
 
@@ -71,13 +75,11 @@ export async function POST(req: NextRequest) {
     - Use **numbered or bulleted lists** where relevant.
     - Each list item should have:
       - A **bolded title** (e.g., product name, recipe, or concept)
-      - A new line with its short description.
-    - For any instructions, nutrition facts, or ingredients, use **indented sub-bullets** below the main item.
-    - **Embed links naturally** in the descriptions using '[link text](url)' format — do not paste raw URLs.
+      - A new line with its short description underneath.
+    - For instructions, nutrition facts, or extra details, use a italic font one- or two-word sub-heading like **Tips**, **Instructions**, or **Nutrition**, followed by ':' and write the content after that.
     - Add line breaks ('\n\n') between items and sections for clarity.
     - End with a summary or call-to-action if appropriate.
-
-    Avoid any filler phrases or information not supported by the context.
+    - Do NOT add external or unrelated content.
 
     Context:
     ${context}
@@ -92,10 +94,10 @@ export async function POST(req: NextRequest) {
     const completion = await client.chat.completions.create({
       model: deployment,
       messages: [
-        { role: "system", content: "You answer based on given context only." },
+        { role: "system", content: "You answer based on given context." },
         { role: "user", content: prompt },
       ],
-      max_completion_tokens: 100000,
+      max_completion_tokens: 15000,
     });
 
     const answer = completion.choices[0]?.message?.content?.trim() ?? "";
@@ -121,7 +123,6 @@ export async function POST(req: NextRequest) {
       ),
     });
   } catch (err) {
-    console.error("Answer generation error:", err);
     return NextResponse.json(
       { success: false, error: (err as Error).message },
       { status: 500 }
