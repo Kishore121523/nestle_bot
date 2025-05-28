@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 /**
   GRAPH-RAG: Hybrid Retrieval + Graph-Aware Reranking
 
@@ -19,6 +17,8 @@ import { NestleDocument } from "@/lib/embedding/uploadToSearch";
 import { getEntitiesForChunk } from "@/lib/graph/getEntitiesForChunk";
 import { stopwords, synonymMap } from "@/lib/utils";
 import "dotenv/config";
+
+export const dynamic = "force-dynamic";
 
 // Setup OpenAI - ada-002 model client for embedding generation
 const openai = new OpenAI({

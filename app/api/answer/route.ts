@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 /*
  * GRAPH-RAG: Answer Generation API
 
@@ -12,6 +10,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 import "dotenv/config";
+
+export const dynamic = "force-dynamic";
 
 // Configure Azure OpenAI client
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
@@ -27,6 +27,8 @@ const client = new AzureOpenAI({
 });
 
 export async function POST(req: NextRequest) {
+  console.log("ENV VERSION:", process.env.OPENAI_API_VERSION);
+
   try {
     const { query } = await req.json();
 
