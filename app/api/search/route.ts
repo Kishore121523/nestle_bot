@@ -16,6 +16,7 @@ import { OpenAI } from "openai";
 import { NestleDocument } from "@/lib/embedding/uploadToSearch";
 import { getEntitiesForChunk } from "@/lib/graph/getEntitiesForChunk";
 import { stopwords, synonymMap } from "@/lib/utils";
+import "dotenv/config";
 
 // Setup OpenAI - ada-002 model client for embedding generation
 const openai = new OpenAI({
