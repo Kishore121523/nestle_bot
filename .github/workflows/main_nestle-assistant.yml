@@ -47,7 +47,7 @@ jobs:
           cp -r .next/standalone build/
           cp -r .next/static build/.next/
           cp -r public build/public
-          cp next.config.js package.json build/
+          cp next.config.ts package.json build/
 
       - name: Zip build folder
         run: |
