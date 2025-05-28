@@ -257,7 +257,7 @@ export default function ChatWindow({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask somethingto me"
+              placeholder="Ask somethingto me!!!"
               className="flex-1 bg-input text-foreground text-[10px] text-xs border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground focus:outline-none focus:ring-0"
             />
             <CustomBtn
