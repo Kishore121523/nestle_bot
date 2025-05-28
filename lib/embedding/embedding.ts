@@ -12,7 +12,7 @@ export async function generateEmbedding(input: string): Promise<number[]> {
         "api-key": process.env.OPENAI_API_KEY!,
       },
       defaultQuery: {
-        "api-version": process.env.OPENAI_API_VERSION!,
+        "api-version": "2023-05-15",
       },
     });
   }
