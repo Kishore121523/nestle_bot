@@ -1,14 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  typescript: {
-    // Ignore type errors in the OpenAI package
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    // Ignore linting errors in the OpenAI package
-    ignoreDuringBuilds: true,
-  },
   env: {
     // Search API
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
