@@ -1,5 +1,6 @@
-import { createServer } from "http";
-import next from "next";
+/* eslint-disable @typescript-eslint/no-require-imports */
+const { createServer } = require("http");
+const next = require("next");
 
 // Azure sets PORT automatically; fallback to 3000 locally
 const port = parseInt(process.env.PORT || "3000", 10);
