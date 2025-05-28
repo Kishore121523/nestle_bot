@@ -9,6 +9,7 @@ const app = next({ dev, dir: "." });
 const handle = app.getRequestHandler();
 
 console.log("Preparing Next.js app...");
+console.log("NEXT_PATH_CHECK:", require.resolve("next"));
 
 app
   .prepare()
