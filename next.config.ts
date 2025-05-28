@@ -5,7 +5,7 @@ const nextConfig = {
     // Search API
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
 
-    // Azure OpenAI Embedding
+    // Azure OpenAI Embedding Keys
     AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
     AZURE_OPENAI_API_BASE: process.env.AZURE_OPENAI_API_BASE,
     AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION,
