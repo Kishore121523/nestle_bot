@@ -38,7 +38,7 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          npm ci
+          npm ci --omit=dev
           npm run build
 
       - name: Prepare standalone build output
@@ -48,6 +48,7 @@ jobs:
           cp -r .next/static build/.next/
           cp -r public build/public || true
           cp server.js next.config.ts package.json build/
+          cp -r node_modules build/node_modules
 
       - name: Zip build output for Azure
         run: |
