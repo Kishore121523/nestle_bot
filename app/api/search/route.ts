@@ -20,7 +20,7 @@ import "dotenv/config";
 
 export const dynamic = "force-dynamic";
 
-// Setup Azure OpenAI client for embeddings
+// Setup Azure OpenAI client for embedding the text
 const openai = new AzureOpenAI({
   apiKey: process.env.AZURE_OPENAI_API_KEY!,
   endpoint: process.env.AZURE_OPENAI_API_BASE!,
