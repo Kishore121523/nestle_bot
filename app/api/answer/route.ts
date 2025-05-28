@@ -1,4 +1,5 @@
 "use server";
+export const dynamic = "force-dynamic";
 
 /*
  * GRAPH-RAG: Answer Generation API

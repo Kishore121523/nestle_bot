@@ -1,4 +1,5 @@
 "use server";
+export const dynamic = "force-dynamic";
 
 /**
   GRAPH-RAG: Hybrid Retrieval + Graph-Aware Reranking
