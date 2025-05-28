@@ -1,3 +1,5 @@
+"use server";
+
 /**
   GRAPH-RAG: Hybrid Retrieval + Graph-Aware Reranking
 

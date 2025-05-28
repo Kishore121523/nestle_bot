@@ -1,3 +1,5 @@
+"use server";
+
 /*
  * GRAPH-RAG: Answer Generation API
 
