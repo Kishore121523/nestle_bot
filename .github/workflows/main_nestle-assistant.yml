@@ -52,12 +52,12 @@ jobs:
           cp -r .next/static build/.next/
           cp -r public build/public || true
           cp server.js next.config.ts package.json build/
-          cp -r node_modules build/node_modules
 
       - name: Zip build output for Azure
         run: |
           cd build
           zip -r ../release.zip .
+          echo "::notice::Zipping complete. Ready for deployment."
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
