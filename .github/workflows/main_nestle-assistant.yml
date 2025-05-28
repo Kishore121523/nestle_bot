@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - nestle-assistant
 
 on:
@@ -13,7 +10,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+      OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      OPENAI_EMBEDDING_MODEL: ${{ secrets.AZURE_OPENAI_EMBEDDING_MODEL }}
+      AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+      AZURE_SEARCH_KEY: ${{ secrets.AZURE_SEARCH_KEY }}
+      AZURE_SEARCH_INDEX: ${{ secrets.AZURE_SEARCH_INDEX }}
+      AZURE_O3_MINI_ENDPOINT: ${{ secrets.AZURE_O3_MINI_ENDPOINT }}
+      AZURE_O3_MINI_KEY: ${{ secrets.AZURE_O3_MINI_KEY }}
+      AZURE_O3_MINI_API_VERSION: ${{ secrets.AZURE_O3_MINI_API_VERSION }}
+      AZURE_O3_MINI_DEPLOYMENT_NAME: ${{ secrets.AZURE_O3_MINI_DEPLOYMENT_NAME }}
+      NEO4J_URI: ${{ secrets.NEO4J_URI }}
+      NEO4J_USER: ${{ secrets.NEO4J_USER }}
+      NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -45,8 +58,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -56,7 +69,7 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -71,4 +84,3 @@ jobs:
           app-name: 'nestle-assistant'
           slot-name: 'Production'
           package: .
-          
