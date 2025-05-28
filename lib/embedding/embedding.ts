@@ -6,14 +6,14 @@ let openai: AzureOpenAI | null = null;
 export async function generateEmbedding(input: string): Promise<number[]> {
   if (!openai) {
     openai = new AzureOpenAI({
-      apiKey: process.env.OPENAI_API_KEY!,
-      endpoint: process.env.OPENAI_API_BASE!,
-      apiVersion: process.env.OPENAI_API_VERSION!,
+      apiKey: process.env.AZURE_OPENAI_API_KEY!,
+      endpoint: process.env.AZURE_OPENAI_API_BASE!,
+      apiVersion: process.env.AZURE_OPENAI_API_VERSION!,
     });
   }
 
   const res = await openai.embeddings.create({
-    model: process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-ada-002",
+    model: process.env.AZURE_OPENAI_EMBEDDING_MODEL || "text-embedding-ada-002",
     input,
   });
 

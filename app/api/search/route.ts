@@ -22,9 +22,9 @@ export const dynamic = "force-dynamic";
 
 // Setup Azure OpenAI client for embeddings
 const openai = new AzureOpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-  endpoint: process.env.OPENAI_API_BASE!,
-  apiVersion: process.env.OPENAI_API_VERSION! || "2023-05-15",
+  apiKey: process.env.AZURE_OPENAI_API_KEY!,
+  endpoint: process.env.AZURE_OPENAI_API_BASE!,
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION! || "2023-05-15",
 });
 
 // Azure Cognitive Search client
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     // Generate embedding from Azure OpenAI
     const embeddingResponse = await openai.embeddings.create({
-      model: process.env.OPENAI_EMBEDDING_MODEL!,
+      model: process.env.AZURE_OPENAI_EMBEDDING_MODEL!,
       input: query,
     });
 
