@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     // Generate embedding from Azure OpenAI
     const embeddingResponse = await openai.embeddings.create({
-      model: process.env.AZURE_OPENAI_EMBEDDING_MODEL!,
+      model: process.env.AZURE_OPENAI_EMBEDDING_MODEL! || "embedding-model",
       input: query,
     });
 
