@@ -91,6 +91,15 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_13B1F222AB704A55AD7A69B7A5F29C63 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_03F8FA1A059246AF95DA34AA9D692DD8 }}
 
+      - name: Set WEBSITE_RUN_FROM_PACKAGE to true (mount zip, no extraction)
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            az webapp config appsettings set \
+              --name nestle-assistant \
+              --resource-group kishore-project-nestle \
+              --settings WEBSITE_RUN_FROM_PACKAGE=1
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
