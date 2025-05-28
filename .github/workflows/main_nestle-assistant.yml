@@ -36,10 +36,14 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Install dependencies and build
-        run: |
-          npm ci --omit=dev
-          npm run build
+      - name: Install all dependencies (including dev)
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Prune dev dependencies (keep only production deps)
+        run: npm prune --production
 
       - name: Prepare standalone build output
         run: |
