@@ -27,8 +27,6 @@ const client = new AzureOpenAI({
 });
 
 export async function POST(req: NextRequest) {
-  console.log("ENV VERSION:", process.env.OPENAI_API_VERSION);
-
   try {
     const { query } = await req.json();
 

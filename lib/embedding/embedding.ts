@@ -1,19 +1,14 @@
-import { OpenAI } from "openai";
+import { AzureOpenAI } from "openai";
 
-let openai: OpenAI | null = null;
+let openai: AzureOpenAI | null = null;
 
-// This function generates an embedding for a given input string using OpenAI's ada-002 model.
+// This function generates an embedding for a given input string using Azure OpenAI's ada-002 model.
 export async function generateEmbedding(input: string): Promise<number[]> {
   if (!openai) {
-    openai = new OpenAI({
+    openai = new AzureOpenAI({
       apiKey: process.env.OPENAI_API_KEY!,
-      baseURL: process.env.OPENAI_API_BASE!,
-      defaultHeaders: {
-        "api-key": process.env.OPENAI_API_KEY!,
-      },
-      defaultQuery: {
-        "api-version": process.env.OPENAI_API_VERSION!,
-      },
+      endpoint: process.env.OPENAI_API_BASE!,
+      apiVersion: process.env.OPENAI_API_VERSION!,
     });
   }
 
