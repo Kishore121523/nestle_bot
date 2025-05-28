@@ -16,7 +16,6 @@ import { AzureOpenAI } from "openai";
 import { NestleDocument } from "@/lib/embedding/uploadToSearch";
 import { getEntitiesForChunk } from "@/lib/graph/getEntitiesForChunk";
 import { stopwords, synonymMap } from "@/lib/utils";
-import "dotenv/config";
 
 export const dynamic = "force-dynamic";
 

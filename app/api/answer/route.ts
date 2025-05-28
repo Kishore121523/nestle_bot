@@ -9,7 +9,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
-import "dotenv/config";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +28,7 @@ const client = new AzureOpenAI({
 export async function POST(req: NextRequest) {
   try {
     const { query } = await req.json();
+    console.log("QUERY:", query);
 
     if (!query || typeof query !== "string") {
       return NextResponse.json(
@@ -36,6 +36,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`;
+
+    console.log("Calling search at:", url);
 
     // Retrieve top-k context chunks using GraphRAG search
     const searchRes = await fetch(

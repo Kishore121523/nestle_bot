@@ -3,12 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "postinstall": "next build",      
-    "start": "node server.js",
-    "lint": "next lint"
-  },
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start -p 80",
+  "lint": "next lint"
+},
   "dependencies": {
     "@azure/search-documents": "^12.1.0",
     "@radix-ui/react-dialog": "^1.1.13",
