@@ -100,6 +100,9 @@ jobs:
               --resource-group kishore-project-nestle \
               --settings WEBSITE_RUN_FROM_PACKAGE=1
 
+      - name: Wait for Azure App Service to settle
+        run: sleep 30
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
