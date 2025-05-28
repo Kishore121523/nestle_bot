@@ -23,7 +23,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
   baseURL: process.env.OPENAI_API_BASE!,
   defaultHeaders: { "api-key": process.env.OPENAI_API_KEY! },
-  defaultQuery: { "api-version": "2023-05-15" },
+  defaultQuery: { "api-version": process.env.OPENAI_API_VERSION! },
 });
 
 // Azure Search client to query the indexed document chunks
