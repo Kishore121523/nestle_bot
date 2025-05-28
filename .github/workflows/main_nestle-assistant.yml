@@ -45,11 +45,12 @@ jobs:
       - name: Prune dev dependencies (keep only production deps)
         run: npm prune --production
 
-      - name: Prepare standalone build output
+      - name: Prepare full build output (with server.js and node_modules)
         run: |
           mkdir -p build/.next
           cp -r .next/standalone/* build/
           cp -r .next/static build/.next/
+          cp -r node_modules build/node_modules    
           cp -r public build/public || true
           cp server.js next.config.ts package.json build/
 
