@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 const openai = new AzureOpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
   endpoint: process.env.OPENAI_API_BASE!,
-  apiVersion: process.env.OPENAI_API_VERSION!,
+  apiVersion: process.env.OPENAI_API_VERSION! || "2023-05-15",
 });
 
 // Azure Cognitive Search client

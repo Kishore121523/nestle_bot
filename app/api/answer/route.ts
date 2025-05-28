@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 // Configure Azure OpenAI client
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
 const apiKey = process.env.AZURE_O3_MINI_KEY!;
-const apiVersion = process.env.AZURE_O3_MINI_API_VERSION!;
+const apiVersion = process.env.AZURE_O3_MINI_API_VERSION! || "2023-05-15";
 const deployment = process.env.AZURE_O3_MINI_DEPLOYMENT_NAME!;
 
 const client = new AzureOpenAI({
