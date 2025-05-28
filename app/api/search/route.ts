@@ -20,13 +20,21 @@ import "dotenv/config";
 
 export const dynamic = "force-dynamic";
 
+let openai: OpenAI | null = null;
+
 // Setup OpenAI - ada-002 model client for embedding generation
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-  baseURL: process.env.OPENAI_API_BASE!,
-  defaultHeaders: { "api-key": process.env.OPENAI_API_KEY! },
-  defaultQuery: { "api-version": process.env.OPENAI_API_VERSION! },
-});
+if (!openai) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+    baseURL: process.env.OPENAI_API_BASE!,
+    defaultHeaders: {
+      "api-key": process.env.OPENAI_API_KEY!,
+    },
+    defaultQuery: {
+      "api-version": process.env.OPENAI_API_VERSION!,
+    },
+  });
+}
 
 // Azure Search client to query the indexed document chunks
 const searchClient = new SearchClient<NestleDocument>(
@@ -85,6 +93,9 @@ export async function POST(req: NextRequest) {
     const keywords = expandKeywords(baseKeywords);
 
     // Generate embedding from OpenAI
+    if (!openai) {
+      throw new Error("OpenAI client is not initialized.");
+    }
     const embeddingResponse = await openai.embeddings.create({
       model: process.env.OPENAI_EMBEDDING_MODEL!,
       input: query,
