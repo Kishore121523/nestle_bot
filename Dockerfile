@@ -18,7 +18,9 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.ts ./next.config.ts
 
 # ✅ Inject env file for production
-COPY .env.docker .env
+# COPY .env.docker .env
+ARG ENV_DOCKER
+RUN echo "$ENV_DOCKER" > .env
 
 # Install only production dependencies
 RUN npm install --production
