@@ -43,13 +43,13 @@ jobs:
 
       - name: Prepare standalone build output
         run: |
-          mkdir build
-          cp -r .next/standalone build/
+          mkdir -p build/.next
+          cp -r .next/standalone/* build/
           cp -r .next/static build/.next/
-          cp -r public build/public
-          cp next.config.ts package.json build/
+          cp -r public build/public || true
+          cp server.js next.config.ts package.json build/
 
-      - name: Zip build folder
+      - name: Zip build output for Azure
         run: |
           cd build
           zip -r ../release.zip .
@@ -91,4 +91,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'nestle-assistant'
-          package: .
+          package: release.zip
