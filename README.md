@@ -289,7 +289,7 @@ This project is deployed manually using Docker and Azure CLI throught Azure App 
 ## Known Limitations & Future Enhancements
 
 - **Cold Start Latency**: Initial requests may experience a delay due to Azure App Service cold starts, especially on free-tier hosting.
-- **Azure OpenAI Throughput Limits**: The deployment uses the lowest available tier of Azure OpenAI, which can throttle requests and cause slower or queued responses during periods of high activity.
+- **Azure OpenAI Throughput Limits**: The deployment uses the lowest available paid tier for Azure OpenAI (to minimize cost), which can throttle requests and cause slower or queued responses during periods of high activity.
 - **Limited Context Memory**: The chatbot currently handles only short-term context within a session and does not persist or recall multi-turn conversations across sessions.
 - **No Admin Dashboard**: There is no visual interface yet for monitoring entities, managing scraped data, or inspecting graph structure—this is planned for future enhancement.
 - **Single Language Support**: At the moment, only English content is supported. Internationalization and multilingual response support are on the roadmap.
