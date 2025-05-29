@@ -44,31 +44,12 @@ export default function ChatWindow({
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = (smooth = true) => {
-    requestAnimationFrame(() => {
-      const container = scrollRef.current;
-      if (!container) return;
-
-      const start = container.scrollTop;
+    const container = scrollRef.current;
+    if (!container) return;
+    setTimeout(() => {
       const end = container.scrollHeight - container.clientHeight;
-
-      if (!smooth || Math.abs(end - start) < 50) {
-        container.scrollTo({ top: end, behavior: "auto" });
-        return;
-      }
-
-      const duration = 300;
-      const startTime = performance.now();
-
-      const animate = (time: number) => {
-        const elapsed = time - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const ease = 1 - Math.pow(1 - progress, 3);
-        container.scrollTop = start + (end - start) * ease;
-        if (progress < 1) requestAnimationFrame(animate);
-      };
-
-      requestAnimationFrame(animate);
-    });
+      container.scrollTo({ top: end, behavior: smooth ? "smooth" : "auto" });
+    }, 50);
   };
 
   useEffect(() => {
