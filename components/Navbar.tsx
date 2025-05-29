@@ -24,7 +24,7 @@ const Navbar = () => {
         {/* Right Nav */}
         <div className="flex items-center gap-6">
         <Input
-          placeholder="Search recipes..."
+          placeholder="Search recipes"
           className="w-[200px] bg-input text-[10px] text-xs border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground  focus:outline-none focus:ring-0"
         />
 
