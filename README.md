@@ -21,7 +21,7 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 
 
 
-## 🎥 Demo
+## Demo
 
 - Live Azure Deployed Link: [Nestle Assistant](https://nestle-assistant-fnancbd7d7hzfxbm.canadacentral-01.azurewebsites.net/)
 
@@ -187,7 +187,7 @@ Several optimizations were implemented throughout the project to ensure performa
     - **Environment-Based Config**: All keys and endpoints are abstracted into `.env` for cleaner code and easier deployment across environments.
     - **Reusable Components**: Shared UI components like dialogs, buttons, and loaders are abstracted for consistent styling and interaction across the app.
 
-## 🚀 Deployment
+## Deployment
 
 This project is deployed manually using Docker and Azure CLI throught Azure App Services.
 
