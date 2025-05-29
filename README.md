@@ -11,7 +11,8 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 - **Efficient storage and retrieval** of vectorized content using **Azure Cognitive Search** and **OpenAI embeddings**.
 
 - **Easily Customizable Crawling Depth**: The crawling system is designed to be fully configurable. Currently, it scrapes up to depth 2 (homepage links and their sub-links), producing ~2500 chunks of content. The Azure Cognitive Search free tier restricts storage to 50MB. Optimizations brought the index size to ~49.85MB without losing meaningful content.
-   ➤ **To scale** this, simply adjust the `maxDepth` parameter in `runScrapeBatch` function, and the pipeline (scraping → filtering → embedding → indexing) will automatically adapt and process the expanded dataset 
+
+  ➤ **To scale** this, simply adjust the `maxDepth` parameter in `runScrapeBatch` function, and the pipeline (scraping → filtering → embedding → indexing) will automatically adapt and process the expanded dataset 
 
 - **Entity extraction**: Products, ingredients, categories, and topics were extracted from each content chunk using the **Azure OpenAI o3-mini model** with an **optimized prompt** for efficiency and accuracy.
 
