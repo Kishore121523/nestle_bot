@@ -13,9 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Write .env.docker file from GitHub Secret
-        run: echo "${{ secrets.ENV_DOCKER }}" > .env.docker
-
       - name: Log in to Azure
         uses: azure/login@v1
         with:
@@ -27,10 +24,8 @@ jobs:
       - name: Build and Push Docker image
         run: |
           docker build --platform=linux/amd64 \
-            --build-arg ENV_DOCKER="${{ secrets.ENV_DOCKER }}" \
             -t kishorenestleacr.azurecr.io/nestle-chatbot:latest .
           docker push kishorenestleacr.azurecr.io/nestle-chatbot:latest
-
 
       - name: Deploy to Azure Web App
         run: |
