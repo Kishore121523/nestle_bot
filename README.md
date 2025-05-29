@@ -51,7 +51,8 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 | **GraphRAG**    | Neo4j                                                     | Stores and queries structured entity relationships                     |
 |                               | Cypher                                                    | Query language used to ingest and link graph nodes semantically        |
 ||||
-| **Deployment**      | Microsoft Azure                                           | Hosts chatbot and backend services with real-time scalability          |
+| **Deployment**      | Microsoft Azure (App Service, ACR, CLI)                  | Dockerized chatbot deployed via Azure Container Registry (ACR) and Azure App Service using Azure CLI for real-time scalability |
+
                            
 
 ## Installation
