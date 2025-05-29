@@ -73,8 +73,8 @@ npm install
     - **Important**: Never commit your .env file to version control. Replace your-openai-key, your-search-key, and other values with your actual credentials.   
 
     ```bash
-    # Search API
-    NEXT_PUBLIC_BASE_URL=http://localhost:3000
+    NEXT_PUBLIC_BASE_URL=http://localhost:3000 #when testing in local machine - development
+    #NEXT_PUBLIC_BASE_URL=http://localhost #when in production env
 
     # Azure OpenAI
     OPENAI_API_KEY=your-openai-key
