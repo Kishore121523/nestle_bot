@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import CustomBtn from "./CustomBtn";
 
@@ -13,7 +18,11 @@ interface ChatSettingsProps {
   onSave: (name: string, icon: string) => void;
 }
 
-export default function ChatSettings({ open, onClose, onSave }: ChatSettingsProps) {
+export default function ChatSettings({
+  open,
+  onClose,
+  onSave,
+}: ChatSettingsProps) {
   const [name, setName] = useState("Nestlé Assistant");
   const [icon, setIcon] = useState("💬");
 
@@ -33,25 +42,31 @@ export default function ChatSettings({ open, onClose, onSave }: ChatSettingsProp
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md [&>button]:hidden">
+      <DialogContent className="w-[85vw] max-w-md sm:max-w-lg [&>button]:hidden px-4 sm:px-6 py-6">
         <DialogHeader>
-          <DialogTitle>Customize Your Assistant</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">Customize Your Assistant</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5 mt-4">
+          {/* Name Input */}
           <div>
-            <label className="text-sm font-medium">Name</label>
-            <Input className="bg-input text-[10px] text-xs border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground focus:outline-none focus:ring-0" value={name} onChange={(e) => setName(e.target.value)} />
+            <label className="block text-sm font-medium mb-1">Name</label>
+            <Input
+              className="w-full text-xs bg-input border border-muted-foreground rounded-md focus-visible:outline-none focus-visible:ring-0"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
 
+          {/* Icon Selection */}
           <div>
-            <label className="text-sm font-medium">Icon</label>
-            <div className="flex gap-2 flex-wrap mt-2">
+            <label className="block text-sm font-medium mb-1">Icon</label>
+            <div className="flex flex-wrap gap-2 mt-1">
               {iconOptions.map((ic) => (
                 <button
                   key={ic}
                   onClick={() => setIcon(ic)}
-                  className={`p-2 text-xl rounded border cursor-pointer ${
+                  className={`p-2 text-xl rounded-md border w-10 h-10 flex items-center justify-center ${
                     icon === ic
                       ? "bg-accent text-accent-foreground border-accent"
                       : "bg-muted hover:bg-muted/70 text-muted-foreground border border-border"
@@ -63,7 +78,8 @@ export default function ChatSettings({ open, onClose, onSave }: ChatSettingsProp
             </div>
           </div>
 
-          <CustomBtn onClick={handleSave} className="w-full mt-4">
+          {/* Save Button */}
+          <CustomBtn onClick={handleSave} className="w-full mt-2 text-xs sm:text-sm">
             Save Changes
           </CustomBtn>
         </div>
