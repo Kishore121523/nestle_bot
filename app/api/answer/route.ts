@@ -1,7 +1,7 @@
 /*
  * GRAPH-RAG: Answer Generation API
 
-  1. Accepts a query from user.
+  1. Accepts a query from user and send it to search API.
   2. Calls the GraphRAG-based `/api/search` endpoint to retrieve top relevant chunks.
   3. Constructs a contextual prompt using those chunks.
   4. Uses Azure OpenAI o3-mini to generate a natural language answer grounded in the context.
@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`;
+    // const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`;
 
-    console.log("Calling search at:", url);
+    // console.log("Calling search at:", url);
 
     // Retrieve top-k context chunks using GraphRAG search
     const searchRes = await fetch(
