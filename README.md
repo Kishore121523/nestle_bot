@@ -18,9 +18,11 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 
 
 
-## Screenshots
+## 🎥 Demo
+Watch the full demo of the Nestlé Assistant in action:
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+[Nestlé Assistant Screen Recording
+](https://drive.google.com/file/d/1SosUPyeq0ZiIP6mS-jvtyd281xOLsAF3/view?usp=sharing)
 
 ## Tech Stack
 
@@ -178,12 +180,99 @@ Several optimizations were implemented throughout the project to ensure performa
     - **Environment-Based Config**: All keys and endpoints are abstracted into `.env` for cleaner code and easier deployment across environments.
     - **Reusable Components**: Shared UI components like dialogs, buttons, and loaders are abstracted for consistent styling and interaction across the app.
 
+## 🚀 Deployment
 
-## Deployment
+This project is deployed manually using Docker and Azure CLI throught Azure App Services.
 
-To deploy this project run
+### Prerequisites
 
-```bash
-  npm run deploy
-```
+- Docker installed and running
+- Azure CLI (`az`) installed and logged in
+- Azure App Service created for Linux containers
+- Azure Container Registry (ACR) created and linked
+- `.env.docker` file with all required environment variables
 
+---
+
+### Steps
+-  Create a `.env.docker` File
+    - Store sensitive API keys and config in a `.env.docker` file. Azure App Service will inject them as environment variables at runtime.
+
+- Create a Dockerfile
+    - IMPORTANT: Azure App Service expects your container to serve on port 80, not the default Next.js port 3000. This is why we set ENV PORT=80 and expose that port.
+    ```
+    # Build stage
+    FROM node:20-alpine AS builder
+
+    WORKDIR /app
+    COPY package*.json ./
+    RUN npm install
+    COPY . .
+    RUN npm run build
+
+    # Production image
+    FROM node:20-alpine
+    WORKDIR /app
+
+    # Copy necessary production files
+    COPY --from=builder /app/.next ./.next
+    COPY --from=builder /app/public ./public
+    COPY --from=builder /app/package*.json ./
+    COPY --from=builder /app/next.config.ts ./next.config.ts
+
+    # Inject env file for production
+    COPY .env.docker .env
+
+    # Install only production dependencies
+    RUN npm install --production
+
+    # Set port and expose
+    ENV PORT=80
+    EXPOSE 80
+
+    CMD ["npm", "start"]
+
+    ```
+- Create Azure Container Registry (Skip if already created)
+    ```bash
+    az acr create \
+     --name kishorenestleacr \
+     --resource-group kishore-project-nestle \
+     --sku Basic \
+     --location canadacentral\
+    ```
+
+-  Build Docker image
+
+    ```bash
+    docker build -t kishorenestleacr.azurecr.io/nestle-chatbot:latest .
+    ```
+
+- Log in to Azure & ACR 
+    ```
+    az login
+    az acr login --name kishorenestleacr
+    ```
+
+- Push Docker Image to ACR
+    ``` 
+    docker push kishorenestleacr.azurecr.io/nestle-chatbot:latest
+    ```
+
+- Deploy to Azure App Service
+    ``` 
+    az webapp config container set \
+        --name nestle-assistant \
+        --resource-group kishore-project-nestle \
+        --container-image-name kishorenestleacr.azurecr.io/nestle-chatbot:v1 \
+        --container-registry-url https://kishorenestleacr.azurecr.io \
+        --container-registry-user $(az acr credential show --name kishorenestleacr --query username -o tsv) \
+        --container-registry-password $(az acr credential show --name kishorenestleacr --query 'passwords[0].value' -o tsv)
+    ```
+
+- Restart the Web App
+   ``` 
+   az webapp restart \
+    --name nestle-assistant \
+    --resource-group kishore-project-nestle
+   ```
