@@ -16,6 +16,9 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 
 - **Deployed on Microsoft Azure** to ensure **scalable, real-time interactions** with the chatbot interface.
 
+- **Backend Updates**: While all scraping, embedding, and entity ingestion logic is scripted, automated cron jobs can be easily implemented that will be used to periodically run these scripts, ensuring the chatbot stays up to date with the latest content from the source website.
+
+
 
 
 ## 🎥 Demo
@@ -276,3 +279,10 @@ This project is deployed manually using Docker and Azure CLI throught Azure App 
     --name nestle-assistant \
     --resource-group kishore-project-nestle
    ```
+## Known Limitations & Future Enhancements
+
+- **Cold Start Latency**: Initial requests may experience a delay due to Azure App Service cold starts, especially on free-tier hosting.
+- **Azure OpenAI Throughput Limits**: The deployment uses the lowest available tier of Azure OpenAI, which can throttle requests and cause slower or queued responses during periods of high activity.
+- **Limited Context Memory**: The chatbot currently handles only short-term context within a session and does not persist or recall multi-turn conversations across sessions.
+- **No Admin Dashboard**: There is no visual interface yet for monitoring entities, managing scraped data, or inspecting graph structure—this is planned for future enhancement.
+- **Single Language Support**: At the moment, only English content is supported. Internationalization and multilingual response support are on the roadmap.
