@@ -278,7 +278,7 @@ This project is deployed manually using Docker and Azure CLI throught Azure App 
     az webapp config container set \
         --name nestle-assistant \
         --resource-group kishore-project-nestle \
-        --container-image-name kishorenestleacr.azurecr.io/nestle-chatbot:v1 \
+        --container-image-name kishorenestleacr.azurecr.io/nestle-chatbot:latest \
         --container-registry-url https://kishorenestleacr.azurecr.io \
         --container-registry-user $(az acr credential show --name kishorenestleacr --query username -o tsv) \
         --container-registry-password $(az acr credential show --name kishorenestleacr --query 'passwords[0].value' -o tsv)
