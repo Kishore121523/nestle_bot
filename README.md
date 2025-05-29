@@ -243,7 +243,7 @@ This project is deployed manually using Docker and Azure CLI throught Azure App 
     CMD ["npm", "start"]
 
     ```
-- Create Azure Container Registry (Skip if already created)
+- Create Azure Container Registry
     ```bash
     az acr create \
      --name kishorenestleacr \
