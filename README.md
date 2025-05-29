@@ -22,7 +22,7 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 
 
 ## 🎥 Demo
-Watch the full demo of the Nestlé Assistant in action:
+Watch the full demo of the Nestlé Assistant in action - (Download to see it in full resolution):
 
 [Nestlé Assistant Screen Recording
 ](https://drive.google.com/file/d/1SosUPyeq0ZiIP6mS-jvtyd281xOLsAF3/view?usp=sharing)
