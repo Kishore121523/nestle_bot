@@ -255,7 +255,7 @@ This project is deployed manually using Docker and Azure CLI throught Azure App 
 -  Build Docker image
 
     ```bash
-    docker build -t kishorenestleacr.azurecr.io/nestle-chatbot:latest .
+    docker build --platform=linux/amd64 -t kishorenestleacr.azurecr.io/nestle-chatbot:latest .
     ```
 
 - Log in to Azure & ACR 
