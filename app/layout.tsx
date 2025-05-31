@@ -1,8 +1,8 @@
 // app/layout.tsx
 import './globals.css';
-import { Poppins } from 'next/font/google';
+import { Source_Sans_3 } from 'next/font/google';
 
-const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600'] });
+const sourceSansPro = Source_Sans_3({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export const metadata = {
   title: 'Nestle Assistant',
@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${poppins.className} bg-background text-foreground`}>
+      <body className={`${sourceSansPro.className} bg-background text-foreground`}>
         {children}
       </body>
     </html>

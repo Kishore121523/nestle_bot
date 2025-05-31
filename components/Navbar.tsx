@@ -3,8 +3,19 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import CustomBtn from './CustomBtn';
-import { Menu, X } from 'lucide-react';
+import {  Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import CustomBtn2 from './CustomBtn2';
+
+const DropdownIcon = () => (
+  <svg
+  className="w-2.5 h-2.5 fill-muted-foreground transform transition-transform duration-200 group-hover:rotate-180 group-hover:fill-[#027b9cf4]"
+  viewBox="0 0 10 6"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M5 6L0 0h10L5 6z" />
+  </svg>
+);
 
 const Navbar = () => {
   const [lang, setLang] = useState<"EN" | "FR">("EN");
@@ -16,29 +27,49 @@ const Navbar = () => {
       {/* Left Nav */}
       <div className="flex items-center gap-4 sm:gap-6 md:gap-8">
         <Image src="/assets/logo.png" alt="Nestlé Logo" width={50} height={50} className="rounded-full" />
-        <div className="hidden md:flex items-center gap-6 text-muted-foreground text-sm">
-          <a href="#" className="hover:text-foreground transition">Brand</a>
-          <a href="#" className="hover:text-foreground transition">All Recipes</a>
-          <a href="#" className="hover:text-foreground transition">Sustainability</a>
-          <a href="#" className="hover:text-foreground transition">About Nestlé</a>
+        <div className="hidden md:flex items-center gap-6 text-muted-foreground text-sm sm:text-[15px]">
+        <a href="#" className="group hover:text-[#027b9cf4] transition font-semibold flex items-center gap-1">
+          Brand
+          <DropdownIcon />
+        </a>
+
+        <a href="#" className="group hover:text-[#027b9cf4] transition font-semibold flex items-center gap-1">
+          All Recipes
+          <DropdownIcon />
+        </a>
+
+        <a href="#" className="hover:text-[#027b9cf4] transition font-semibold">
+          Sustainability
+        </a>
+
+        <a href="#" className="group hover:text-[#027b9cf4] transition font-semibold flex items-center gap-1">
+          About Nestle
+          <DropdownIcon />
+        </a>
         </div>
       </div>
 
       {/* Right Nav */}
-      <div className="hidden md:flex items-center gap-4 sm:gap-5 md:gap-6">
+      <div className="hidden md:flex items-center gap-1 sm:gap-2">
         <Input
           placeholder="Search recipes..."
-          className="w-[120px] sm:w-[160px] md:w-[200px] text-xs bg-input border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground"
+          className="w-[120px] sm:w-[160px] md:w-[200px] text-xs bg-input border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground mr-3"
         />
 
-        <a href="#" className="text-muted-foreground hover:text-foreground transition text-sm">Support</a>
-        <CustomBtn>Sign Up</CustomBtn>
+        <CustomBtn2 className='hover:text-[#027b9cf4] font-semibold'>Support</CustomBtn2>
+        <div className="h-6 w-px bg-muted-foreground opacity-50" />
+        
+        <div className="hidden md:flex items-center gap-1 sm:gap-2">
 
-        <div className="h-6 w-px bg-foreground" />
+          <CustomBtn2 className='hover:text-[#027b9cf4] font-semibold'>Sign Up</CustomBtn2>
 
-        <CustomBtn onClick={() => setLang(lang === "EN" ? "FR" : "EN")}>
-          {lang}
-        </CustomBtn>
+          <div className="h-6 w-px bg-muted-foreground opacity-50" />
+
+          <CustomBtn className='ml-[5px]' onClick={() => setLang(lang === "EN" ? "FR" : "EN")}>
+            {lang}
+          </CustomBtn>
+
+        </div>
       </div>
 
       {/* Mobile Menu Button */}

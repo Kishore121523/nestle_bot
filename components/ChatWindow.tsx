@@ -9,6 +9,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import { ExpandableSources } from "./ExpandableSources";
 import { typeOutText } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import Image from "next/image";
 
 interface Message {
   role: "user" | "assistant";
@@ -197,35 +198,78 @@ export default function ChatWindow({
           >
             {messages.map((msg, idx) => (
               <div
-              key={idx}
-              className={`w-fit max-w-[85%] px-3 py-2 rounded-md text-sm mb-3 ${
-                msg.role === "user"
-                  ? "ml-auto bg-accent text-accent-foreground"
-                  : "bg-background text-foreground"
-              }`}
-            >
-                <div className="markdown-message text-sm leading-normal">
-                <ReactMarkdown
-                  components={{
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    a: ({ node, ...props }) => (
-                      <a
-                        {...props}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline hover:text-primary/80 transition-colors"
-                      />
-                    ),
-                  }}
-                >
-                  {msg.content}
-                </ReactMarkdown>
-                </div>
-                {msg.role === "assistant" && Array.isArray(msg.sources) && msg.sources.length > 0 && (
-                  <ExpandableSources sources={msg.sources} />
+                key={idx}
+                className={`flex items-start gap-[7px] ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {msg.role === "assistant" && (
+                  <>
+                    <Image
+                      src="/assets/logo.png"
+                      alt="Nestlé"
+                      width={24}
+                      height={24}
+                      className="w-6 h-6 rounded-full bg-white border border-muted object-cover p-[3px]"
+                    />
+                    <div
+                      className="w-fit max-w-[75%] sm:max-w-[85%] px-3 py-2 rounded-md text-[15px] sm:text-[16px]  mb-3 bg-background text-foreground"
+                    >
+                      <div className="markdown-message text-[15px] sm:text-[16px] leading-normal">
+                        <ReactMarkdown
+                          components={{
+                            a: (props) => (
+                              <a
+                                {...props}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline hover:text-primary/80 transition-colors"
+                              />
+                            ),
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                      {Array.isArray(msg.sources) && msg.sources.length > 0 && (
+                        <ExpandableSources sources={msg.sources} />
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {msg.role === "user" && (
+                  <>
+                    <div
+                      className="w-fit max-w-[75%] sm:max-w-[85%] px-3 py-2 rounded-md text-[15px] sm:text-[16px]  mb-3 bg-accent text-accent-foreground"
+                    >
+                      <div className="markdown-message text-[15px] sm:text-[16px] leading-normal">
+                        <ReactMarkdown
+                          components={{
+                            a: (props) => (
+                              <a
+                                {...props}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline hover:text-primary/80 transition-colors"
+                              />
+                            ),
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-white text-muted-foreground flex items-center justify-center text-xs font-bold">
+                      A
+                    </div>
+                  </>
                 )}
               </div>
             ))}
+
+
+
             {isTyping && showTypingBubble && (
               <div className="w-fit bg-background text-muted-foreground text-xs px-3 py-2 rounded-md animate-pulse">
                 <span className="animate-pulse">● ● ●</span>
