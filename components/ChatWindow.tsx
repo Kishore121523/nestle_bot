@@ -81,7 +81,6 @@ export default function ChatWindow({
     } else if (open) {
       setTimeout(() => scrollToBottom(true), 300);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const sendMessage = async (content: string) => {
@@ -96,48 +95,49 @@ export default function ChatWindow({
         body: JSON.stringify({ query: content }),
       });
 
+      if (!res.ok) throw new Error("Network response was not ok");
+
       const data = await res.json();
 
-      if (data?.answer) {
-        type Source = { sourceUrl: string };
-        const sourceUrls = Array.isArray(data.sources)
-          ? [...new Set((data.sources as Source[]).map((s) => String(s.sourceUrl)))]
-          : [];
+      if (!data?.answer) throw new Error("No answer returned");
 
-        let tempContent = "";
-        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      type Source = { sourceUrl: string };
+      const sourceUrls = Array.isArray(data.sources)
+        ? [...new Set((data.sources as Source[]).map((s) => String(s.sourceUrl)))]
+        : [];
 
-        typeOutText(
-          data.answer,
-          (chunk) => {
-            tempContent = chunk;
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              return [...prev.slice(0, -1), { ...last, content: chunk }];
-            });
-            scrollToBottom();
-          },
-          () => {
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              return [...prev.slice(0, -1), { ...last, content: tempContent, sources: sourceUrls }];
-            });
-            setIsTyping(false);
-            scrollToBottom();
-          }
-        );
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Sorry, I couldn't find an answer." },
-        ]);
-        scrollToBottom();
-      }
-    } catch {
+      let tempContent = "";
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      typeOutText(
+        data.answer,
+        (chunk) => {
+          tempContent = chunk;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            return [...prev.slice(0, -1), { ...last, content: chunk }];
+          });
+          scrollToBottom();
+        },
+        () => {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            return [...prev.slice(0, -1), { ...last, content: tempContent, sources: sourceUrls }];
+          });
+          setIsTyping(false);
+          scrollToBottom();
+        }
+      );
+    } catch (error) {
+      console.error("Error during /api/answer:", error);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Something went wrong." },
+        {
+          role: "assistant",
+          content: "Something went wrong. Please try again.",
+        },
       ]);
+      scrollToBottom();
     } finally {
       setIsTyping(false);
     }
@@ -241,7 +241,7 @@ export default function ChatWindow({
                 {msg.role === "user" && (
                   <>
                     <div
-                      className="w-fit max-w-[75%] sm:max-w-[85%] px-3 py-2 rounded-md text-[15px] sm:text-[16px]  mb-3 bg-accent text-accent-foreground"
+                      className="w-fit max-w-[75%] sm:max-w-[80%] px-3 py-2 rounded-md text-[15px] sm:text-[16px]  mb-3 bg-accent text-accent-foreground"
                     >
                       <div className="markdown-message text-[15px] sm:text-[16px] leading-normal">
                         <ReactMarkdown
@@ -268,8 +268,6 @@ export default function ChatWindow({
               </div>
             ))}
 
-
-
             {isTyping && showTypingBubble && (
               <div className="w-fit bg-background text-muted-foreground text-xs px-3 py-2 rounded-md animate-pulse">
                 <span className="animate-pulse">● ● ●</span>
@@ -283,7 +281,7 @@ export default function ChatWindow({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask something..."
-              className="flex-1 bg-input text-foreground text-[10px] text-xs border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground focus:outline-none focus:ring-0"
+              className="flex-1 bg-input text-foreground text-[14px] sm:!text-[15px] border border-muted-foreground rounded-[6px] focus-visible:outline-none focus-visible:ring-0 focus-visible:border-muted-foreground focus:outline-none focus:ring-0"
             />
             <CustomBtn
               onClick={() => {

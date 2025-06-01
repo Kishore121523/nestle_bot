@@ -12,7 +12,7 @@ export function ExpandableSources({ sources }: { sources: string[] }) {
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="hover:underline hover:text-primary transition-colors text-[11px] flex items-center gap-1 ml-auto"
+        className="hover:underline hover:text-primary cursor-pointer transition-colors text-[11px] flex items-center gap-1 ml-auto"
       >
         <LinkIcon className="h-[12px] w-[12px]" />
         {open ? "Hide Sources" : "Show Sources"}
@@ -25,11 +25,11 @@ export function ExpandableSources({ sources }: { sources: string[] }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.2 }}
-          className="mt-2 text-left space-y-2 p-3 rounded-md bg-muted/40 text-muted-foreground text-[11px] sm:text-xs overflow-hidden"
+          className="mt-2 text-left space-y-2 p-3 rounded-md bg-muted/40 text-muted-foreground text-[11px] sm:text-[13px] overflow-hidden"
         >
           <ul className="space-y-1">
             {sources.map((url, i) => {
-              const displayUrl = url.length > 40 ? url.slice(0, 40) + "..." : url;
+              const displayUrl = url.length > 42 ? url.slice(0, 42) + "..." : url;
               return (
                 <li className="flex items-start gap-1 leading-tight break-words" key={i}>
                   <span>-</span>
