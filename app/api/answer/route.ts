@@ -1,18 +1,33 @@
-/*
- * GRAPH-RAG: Answer Generation API
-
-  1. Accepts a query from user and send it to search API.
-  2. Calls the GraphRAG-based `/api/search` endpoint to retrieve top relevant chunks.
-  3. Constructs a contextual prompt using those chunks.
-  4. Uses Azure OpenAI o3-mini to generate a natural language answer grounded in the context.
-*/
-
+import { productKeywords } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 
 export const dynamic = "force-dynamic";
 
-// Configure Azure OpenAI client
+type StoreProduct = {
+  name: string;
+  price: number;
+};
+
+type Store = {
+  name: string;
+  address: string;
+  city: string;
+  lat: number;
+  lng: number;
+  distance: number;
+  products: StoreProduct[];
+};
+
+type Match = {
+  id: string;
+  sourceUrl: string;
+  chunkIndex: number;
+  entities: string[];
+  score: number;
+  content: string;
+};
+
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
 const apiKey = process.env.AZURE_O3_MINI_KEY!;
 const apiVersion = process.env.AZURE_O3_MINI_API_VERSION! || "2023-05-15";
@@ -27,7 +42,7 @@ const client = new AzureOpenAI({
 
 export async function POST(req: NextRequest) {
   try {
-    const { query } = await req.json();
+    const { query, lat, lng } = await req.json();
     console.log("QUERY:", query);
 
     if (!query || typeof query !== "string") {
@@ -37,10 +52,82 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`;
-    // console.log("Calling search at:", url);
+    // Check for store intent and product keywords
+    const lowered = query.toLowerCase();
+    const storeIntent =
+      /\b(where|buy|get|purchase|shop|store|near me|closest)\b/.test(lowered);
+    const matchedProduct = productKeywords.find((p) =>
+      lowered.includes(p.toLowerCase())
+    );
 
-    // Retrieve top-k context chunks using GraphRAG search
+    const cityMatch = query.match(/\bin\s+([a-zA-Z\s]+)$/);
+    const city = cityMatch?.[1]?.trim();
+    const hasGeo = typeof lat === "number" && typeof lng === "number";
+
+    if (storeIntent && matchedProduct && (hasGeo || city)) {
+      const storeRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/stores`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product: matchedProduct,
+            ...(hasGeo ? { lat, lng, radius: 20 } : {}),
+            ...(city ? { city } : {}),
+          }),
+        }
+      );
+
+      if (!storeRes.ok) {
+        console.error("Store fetch failed:", await storeRes.text());
+        return NextResponse.json(
+          { success: false, error: "Failed to fetch store data" },
+          { status: 500 }
+        );
+      }
+
+      const storeData = await storeRes.json();
+
+      if (!storeData?.stores?.length) {
+        return NextResponse.json({
+          success: true,
+          answer:
+            "I couldn’t find any stores near you selling that product. Try searching again later or expand your search radius.",
+        });
+      }
+
+      const answer =
+        `Here are some nearby stores where you can find **${matchedProduct}**:\n\n` +
+        storeData.stores
+          .map((s: Store, i: number) => {
+            const productsFormatted = Array.isArray(s.products)
+              ? s.products
+                  .map((p) =>
+                    p.name && typeof p.price === "number"
+                      ? `**${p.name}** – **$${p.price.toFixed(2)}**`
+                      : null
+                  )
+                  .filter(Boolean)
+                  .join(", ")
+              : "No product details available";
+
+            return (
+              `**${i + 1}. ${s.name}**  \n` +
+              `${s.city}  \n` +
+              `*Distance*: ${
+                typeof s.distance === "number"
+                  ? `${s.distance.toFixed(1)} km`
+                  : "N/A"
+              }  \n` +
+              `*Item Name*: ${productsFormatted}`
+            );
+          })
+          .join("\n\n");
+
+      return NextResponse.json({ success: true, answer });
+    }
+
+    // GraphRAG fallback if there is no store intent or product match or lat/lng
     const searchRes = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
       {
@@ -60,15 +147,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Build context from retrieved chunks
-    const contextLines: string[] = [];
-
-    for (let i = 0; i < matches.length; i++) {
-      const content = matches[i].content;
-      if (typeof content === "string") {
-        contextLines.push(`Chunk ${i + 1}:\n${content}`);
-      }
-    }
+    const contextLines = matches
+      .map((m: Match, i: number) =>
+        typeof m.content === "string" ? `Chunk ${i + 1}:\n${m.content}` : null
+      )
+      .filter(Boolean);
 
     const context = contextLines.join("\n\n");
 
@@ -95,7 +178,6 @@ export async function POST(req: NextRequest) {
     Respond in clean Markdown with clear paragraph spacing.
     `;
 
-    // Send prompt to o3-mini and generate response
     const completion = await client.chat.completions.create({
       model: deployment,
       messages: [
@@ -110,22 +192,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       answer,
-      sources: matches.map(
-        (m: {
-          id: string;
-          sourceUrl: string;
-          chunkIndex: number;
-          entities: string[];
-          score: number;
-          content: string;
-        }) => ({
-          id: m.id,
-          sourceUrl: m.sourceUrl,
-          chunkIndex: m.chunkIndex,
-          entities: m.entities,
-          score: m.score,
-        })
-      ),
+      sources: matches.map((m: Match) => ({
+        id: m.id,
+        sourceUrl: m.sourceUrl,
+        chunkIndex: m.chunkIndex,
+        entities: m.entities,
+        score: m.score,
+      })),
     });
   } catch (err) {
     return NextResponse.json(
@@ -134,88 +207,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-/*  LangChain is significantly slower than direct API calls.
-    Useful for complex chains, but may add latency for simpler tasks.
-    Response time comparison:
-    LangChain-based method:
-        POST /api/search  → 200 OK in 2528ms
-        POST /api/answer  → 200 OK in 82068ms
-      Low-level API method:
-        POST /api/search  → 200 OK in 2580ms
-        POST /api/answer  → 200 OK in 17736ms
-*/
-
-// /* eslint-disable @typescript-eslint/no-explicit-any */
-// import { NextRequest, NextResponse } from "next/server";
-// import { llm, nestlePrompt } from "@/lib/langchain";
-// import { RunnableSequence } from "@langchain/core/runnables";
-
-// export const dynamic = "force-dynamic";
-
-// const answerChain = RunnableSequence.from([
-//   async (input: { query: string; context: string }) => ({
-//     question: input.query,
-//     context: input.context,
-//   }),
-//   nestlePrompt,
-//   llm,
-// ]);
-
-// export async function POST(req: NextRequest) {
-//   try {
-//     const { query } = await req.json();
-
-//     if (!query || typeof query !== "string") {
-//       return NextResponse.json({ error: "Invalid query" }, { status: 400 });
-//     }
-
-//     // Step 1: Call /api/search
-//     const searchRes = await fetch(
-//       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
-//       {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ query, top: 3 }),
-//       }
-//     );
-
-//     const { matches } = await searchRes.json();
-
-//     if (!matches || matches.length === 0) {
-//       return NextResponse.json({
-//         success: true,
-//         answer: "Sorry, I couldn't find any relevant information.",
-//       });
-//     }
-
-//     // Step 2: Build context
-//     const contextLines = matches
-//       .map((m: any, i: number) =>
-//         typeof m.content === "string" ? `Chunk ${i + 1}:\n${m.content}` : null
-//       )
-//       .filter(Boolean)
-//       .join("\n\n");
-
-//     // Step 3: Run LangChain LLM chain
-//     const result = await answerChain.invoke({ query, context: contextLines });
-//     const answer = typeof result === "string" ? result : result.content;
-
-//     return NextResponse.json({
-//       success: true,
-//       answer,
-//       sources: matches.map((m: any) => ({
-//         id: m.id,
-//         sourceUrl: m.sourceUrl,
-//         chunkIndex: m.chunkIndex,
-//         entities: m.entities,
-//         score: m.score,
-//       })),
-//     });
-//   } catch (err) {
-//     return NextResponse.json(
-//       { success: false, error: (err as Error).message },
-//       { status: 500 }
-//     );
-//   }
-// }

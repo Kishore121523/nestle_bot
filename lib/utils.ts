@@ -175,3 +175,22 @@ export function typeOutText(
   }
   type();
 }
+
+export const productKeywords = [
+  "kitkat",
+  "kit kat",
+  "kit-kat",
+  "nestle products",
+  "nestle items",
+  "nestle chocolate",
+  "chocolate",
+  "coffee crisp",
+  "smarties",
+  "aero",
+  "nescafe",
+  "boost",
+  "turtles",
+  "haagen-dazs",
+  "nestlé pure life",
+  "nesquik",
+];

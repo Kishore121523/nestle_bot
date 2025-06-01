@@ -29,6 +29,7 @@ interface ChatWindowProps {
   onOpenSettings: () => void;
 }
 
+
 export default function ChatWindow({
   open,
   onClose,
@@ -81,53 +82,75 @@ export default function ChatWindow({
     } else if (open) {
       setTimeout(() => scrollToBottom(true), 300);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const sendMessage = async (content: string) => {
     setMessages((prev) => [...prev, { role: "user", content }]);
     setIsTyping(true);
     scrollToBottom();
-
+  
     try {
-      const res = await fetch("/api/answer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: content }),
-      });
-
-      if (!res.ok) throw new Error("Network response was not ok");
-
-      const data = await res.json();
-
-      if (!data?.answer) throw new Error("No answer returned");
-
-      type Source = { sourceUrl: string };
-      const sourceUrls = Array.isArray(data.sources)
-        ? [...new Set((data.sources as Source[]).map((s) => String(s.sourceUrl)))]
-        : [];
-
-      let tempContent = "";
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-      typeOutText(
-        data.answer,
-        (chunk) => {
-          tempContent = chunk;
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            return [...prev.slice(0, -1), { ...last, content: chunk }];
-          });
-          scrollToBottom();
-        },
-        () => {
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            return [...prev.slice(0, -1), { ...last, content: tempContent, sources: sourceUrls }];
-          });
-          setIsTyping(false);
-          scrollToBottom();
+      const sendToApi = async (lat?: number, lng?: number) => {
+        const res = await fetch("/api/answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: content, lat, lng }),
+        });
+  
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Backend error:", errorText);
+          throw new Error(`API Error: ${res.status} - ${errorText}`);
         }
-      );
+  
+        const data = await res.json();
+  
+        if (!data?.answer) throw new Error("No answer returned");
+  
+        type Source = { sourceUrl: string };
+        const sourceUrls = Array.isArray(data.sources)
+          ? [...new Set((data.sources as Source[]).map((s) => String(s.sourceUrl)))]
+          : [];
+  
+        let tempContent = "";
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+  
+        typeOutText(
+          data.answer,
+          (chunk) => {
+            tempContent = chunk;
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              return [...prev.slice(0, -1), { ...last, content: chunk }];
+            });
+            setIsTyping(false);
+            scrollToBottom();
+          },
+          () => {
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              return [...prev.slice(0, -1), { ...last, content: tempContent, sources: sourceUrls }];
+            });
+            setIsTyping(false);
+            scrollToBottom();
+          }
+        );
+      };
+      
+      // Check if geolocation is available and get current position
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            sendToApi(position.coords.latitude, position.coords.longitude);
+          },
+          () => {
+            sendToApi();
+          }
+        );
+      } else {
+        sendToApi();
+      }
     } catch (error) {
       console.error("Error during /api/answer:", error);
       setMessages((prev) => [
@@ -138,10 +161,10 @@ export default function ChatWindow({
         },
       ]);
       scrollToBottom();
-    } finally {
       setIsTyping(false);
     }
   };
+  
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -212,9 +235,7 @@ export default function ChatWindow({
                       height={24}
                       className="w-6 h-6 rounded-full bg-white border border-muted object-cover p-[3px]"
                     />
-                    <div
-                      className="w-fit max-w-[75%] sm:max-w-[85%] px-3 py-2 rounded-md text-[15px] sm:text-[16px]  mb-3 bg-background text-foreground"
-                    >
+                    <div className="w-fit max-w-[75%] sm:max-w-[85%] px-3 py-2 rounded-md text-[15px] sm:text-[16px] mb-3 bg-background text-foreground">
                       <div className="markdown-message text-[15px] sm:text-[16px] leading-normal">
                         <ReactMarkdown
                           components={{
@@ -240,9 +261,7 @@ export default function ChatWindow({
 
                 {msg.role === "user" && (
                   <>
-                    <div
-                      className="w-fit max-w-[75%] sm:max-w-[80%] px-3 py-2 rounded-md text-[15px] sm:text-[16px]  mb-3 bg-accent text-accent-foreground"
-                    >
+                    <div className="w-fit max-w-[75%] sm:max-w-[80%] px-3 py-2 rounded-md text-[15px] sm:text-[16px] mb-3 bg-accent text-accent-foreground">
                       <div className="markdown-message text-[15px] sm:text-[16px] leading-normal">
                         <ReactMarkdown
                           components={{
