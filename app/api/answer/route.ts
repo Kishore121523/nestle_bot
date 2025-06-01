@@ -1,4 +1,3 @@
-import { productKeywords } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 
@@ -30,7 +29,7 @@ type Match = {
 
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
 const apiKey = process.env.AZURE_O3_MINI_KEY!;
-const apiVersion = process.env.AZURE_O3_MINI_API_VERSION! || "2023-05-15";
+const apiVersion = process.env.AZURE_O3_MINI_API_VERSION!;
 const deployment = process.env.AZURE_O3_MINI_DEPLOYMENT_NAME!;
 
 const client = new AzureOpenAI({
@@ -39,6 +38,41 @@ const client = new AzureOpenAI({
   apiVersion,
   deployment,
 });
+
+// FALLBACK if Regex fails - Classify intent via LLM if uncertain
+async function classifyIntentWithLLM(query: string): Promise<"store" | "info"> {
+  const completion = await client.chat.completions.create({
+    model: deployment,
+    messages: [
+      {
+        role: "system",
+        content: `You are a classification system that determines the user's intent.
+
+          Classify the user's query strictly into one of these categories:
+          - 'store': if the user wants to find or buy a product in a physical or online store
+          - 'info': if the user is asking for product details, ingredients, nutrition, or general knowledge
+
+          Respond with exactly one word: "store" or "info".
+
+          Examples:
+          "Where can I buy KitKat?" → store  
+          "How many calories in KitKat?" → info  
+          "Nearby stores that sell Smarties" → store  
+          "What is in a Coffee Crisp?" → info  
+          "Find a place to purchase Aero" → store  
+          "Is Boost good for kids?" → info`,
+      },
+      { role: "user", content: `Query: "${query}"` },
+    ],
+    max_completion_tokens: 100,
+  });
+
+  return completion.choices[0]?.message?.content
+    ?.toLowerCase()
+    .includes("store")
+    ? "store"
+    : "info";
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,26 +88,30 @@ export async function POST(req: NextRequest) {
 
     // Check for store intent and product keywords
     const lowered = query.toLowerCase();
-    const storeIntent =
-      /\b(where|buy|get|purchase|shop|store|near me|closest)\b/.test(lowered);
-    const matchedProduct = productKeywords.find((p) =>
-      lowered.includes(p.toLowerCase())
-    );
+    const storeRegex =
+      /\b(\ where (can i|do i)? (buy|get|purchase|find|shop for)|\ find (a|the)? (store|place) (to )?(buy|get|shop)|\ buy|purchase|shop for|\ get (from|nearby|at)|\ store (near me|close by|nearby)|\ places? (to )?(buy|get)\ )\b/;
 
-    const cityMatch = query.match(/\bin\s+([a-zA-Z\s]+)$/);
-    const city = cityMatch?.[1]?.trim();
-    const hasGeo = typeof lat === "number" && typeof lng === "number";
+    let intent: "store" | "info" = "info";
 
-    if (storeIntent && matchedProduct && (hasGeo || city)) {
+    if (storeRegex.test(lowered)) {
+      intent = "store";
+    } else {
+      intent = await classifyIntentWithLLM(query); // Go to LLM classification if regex misses
+      // console.log(intent, "intent classified by LLM");
+    }
+
+    // If intent is "store", we need lat/lng
+    if (intent === "store") {
       const storeRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/stores`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            product: matchedProduct,
-            ...(hasGeo ? { lat, lng, radius: 20 } : {}),
-            ...(city ? { city } : {}),
+            query,
+            lat,
+            lng,
+            radiusKm: 10,
           }),
         }
       );
@@ -92,12 +130,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: true,
           answer:
-            "I couldn’t find any stores near you selling that product. Try searching again later or expand your search radius.",
+            "Sorry, I couldn't find any nearby stores offering that product. Please try searching again with a specific product name.",
         });
       }
 
+      const productName =
+        storeData.stores[0]?.products?.[0]?.name ?? "this product";
+
       const answer =
-        `Here are some nearby stores where you can find **${matchedProduct}**:\n\n` +
+        `Here are some nearby stores where you can find **${productName}**:\n\n` +
         storeData.stores
           .map((s: Store, i: number) => {
             const productsFormatted = Array.isArray(s.products)
@@ -112,9 +153,8 @@ export async function POST(req: NextRequest) {
               : "No product details available";
 
             return (
-              `**${i + 1}. ${s.name}**  \n` +
-              `${s.city}  \n` +
-              `*Distance*: ${
+              `**${i + 1}. ${s.name}**, ${s.city}  \n` +
+              `\n *Distance*: ${
                 typeof s.distance === "number"
                   ? `${s.distance.toFixed(1)} km`
                   : "N/A"
@@ -127,7 +167,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, answer });
     }
 
-    // GraphRAG fallback if there is no store intent or product match or lat/lng
+    // GraphRAG fallback if the intent is not "info"
     const searchRes = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
       {

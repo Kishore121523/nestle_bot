@@ -36,13 +36,40 @@ const haversineDistance = (
 
 export async function POST(req: NextRequest) {
   try {
-    const { lat, lng, product, radiusKm = 20 } = await req.json();
+    const { lat, lng, radiusKm = 10, query } = await req.json();
 
-    if (typeof lat !== "number" || typeof lng !== "number" || !product) {
+    if (typeof lat !== "number" || typeof lng !== "number" || !query) {
       return NextResponse.json(
         { success: false, error: "Invalid request body" },
         { status: 400 }
       );
+    }
+
+    // extract product from query
+    const loweredQuery = query.toLowerCase();
+    const productKeywords = [
+      "kitkat",
+      "smarties",
+      "coffee crisp",
+      "aero",
+      "nescafe",
+      "boost",
+      "haagen-dazs",
+      "turtles",
+      "nesquik",
+      "delissio",
+      "purina",
+      "gerber",
+    ];
+    const matchedProduct = productKeywords.find((p) =>
+      loweredQuery.includes(p.toLowerCase())
+    );
+
+    if (!matchedProduct) {
+      return NextResponse.json({
+        success: false,
+        error: "No valid product found in query.",
+      });
     }
 
     const filePath = path.resolve(process.cwd(), "public/mockStoreData.json");
@@ -52,11 +79,11 @@ export async function POST(req: NextRequest) {
     const matches = stores
       .map((store) => {
         const distance = haversineDistance(lat, lng, store.lat, store.lng);
-        const matchedProduct = store.products?.find((p) =>
-          p.name.toLowerCase().includes(product.toLowerCase())
+        const matched = store.products?.find((p) =>
+          p.name.toLowerCase().includes(matchedProduct.toLowerCase())
         );
 
-        if (distance > radiusKm || !matchedProduct) return null;
+        if (distance > radiusKm || !matched) return null;
 
         return {
           name: store.name,
@@ -65,7 +92,7 @@ export async function POST(req: NextRequest) {
           lat: store.lat,
           lng: store.lng,
           distance,
-          products: [matchedProduct],
+          products: [matched],
         };
       })
       .filter(Boolean);
