@@ -138,10 +138,13 @@ export async function POST(req: NextRequest) {
         storeData.stores?.[0]?.products?.[0]?.name ??
         "this product";
 
+      const capitalizedProductName =
+        productName.charAt(0).toUpperCase() + productName.slice(1);
+
       let answer =
-        `Here are some nearby stores where you can find **${productName}**:\n\n` +
+        `Here are some nearby stores where you can find **${capitalizedProductName}**:\n\n` +
         storeData.stores
-          .map((s: Store, i: number) => {
+          .map((s: Store) => {
             const productsFormatted = Array.isArray(s.products)
               ? s.products
                   .map((p) =>
@@ -154,16 +157,20 @@ export async function POST(req: NextRequest) {
               : "No product details available";
 
             return (
-              `**${i + 1}. ${s.name}**, ${s.city}  \n` +
-              `\n *Distance*: ${
+              `**📍[${s.name} – ${
+                s.city
+              }](https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                s.address
+              )})**  \n` +
+              `Item Name: ${productsFormatted} \n` +
+              `\n Distance: ${
                 typeof s.distance === "number"
                   ? `${s.distance.toFixed(1)} km`
                   : "N/A"
-              }  \n` +
-              `*Item Name*: ${productsFormatted}`
+              }  \n\n---\n\n`
             );
           })
-          .join("\n\n");
+          .join("\n\n\n");
 
       const amazonUrl = `https://www.amazon.ca/s?k=${encodeURIComponent(
         `Nestle ${productName}`

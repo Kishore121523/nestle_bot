@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, SendHorizonal, Settings2, X } from "lucide-react";
+import {  Minus, SendHorizonal, Settings2, X } from "lucide-react";
 import { Input } from "./ui/input";
 import CustomBtn from "./CustomBtn";
 import ConfirmDialog from "./ConfirmDialog";
@@ -248,18 +248,27 @@ export default function ChatWindow({
                             <>
                               <ReactMarkdown
                                 components={{
-                                  a: (props) => (
+                                  strong: ({ children }) => (
+                                    <span className="font-semibold">{children}</span>
+                                  ),
+                                  a: ({ href, children }) => (
                                     <a
-                                      {...props}
+                                      href={href}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-primary underline hover:text-primary/80 transition-colors"
-                                    />
+                                      className="inline items-center gap-1 !no-underline hover:!underline !font-semibold !text-foreground hover:opacity-80 transition text-sm sm:text-base"
+                                    >
+                                      {children}
+                                    </a>
+                                  ),
+                                  hr: () => (
+                                    <hr className="border-foreground/20 my-2 w-[95%] mr-auto" />
                                   ),
                                 }}
                               >
                                 {cleanedContent}
                               </ReactMarkdown>
+
 
                               {productName && amazonUrl && (
                                 <div className="mt-3 w-full">

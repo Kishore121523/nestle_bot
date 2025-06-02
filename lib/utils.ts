@@ -156,7 +156,6 @@ export const synonymMap: Record<string, string[]> = {
   ],
 };
 
-// Type out text
 export function typeOutText(
   fullText: string,
   callback: (chunk: string) => void,
@@ -164,15 +163,30 @@ export function typeOutText(
   delay = 10
 ) {
   let i = 0;
+
+  // Mask all markdown links
+  const maskedText = fullText.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    (_, label) => `[${label}](#hidden)`
+  );
+
+  // Mask amazon buttons as well
+  const fullyMasked = maskedText.replace(
+    /\[\[amazon-button\|(.+?)\]\](.*?)\[\[\/amazon-button\]\]/g,
+    ""
+  );
+
   function type() {
-    if (i < fullText.length) {
-      callback(fullText.slice(0, i + 1));
+    if (i < fullyMasked.length) {
+      callback(fullyMasked.slice(0, i + 1));
       i++;
       setTimeout(type, delay);
     } else {
+      callback(fullText);
       done();
     }
   }
+
   type();
 }
 
