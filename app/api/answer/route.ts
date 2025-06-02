@@ -64,7 +64,7 @@ async function classifyIntentWithLLM(query: string): Promise<"store" | "info"> {
       },
       { role: "user", content: `Query: "${query}"` },
     ],
-    max_completion_tokens: 100,
+    max_completion_tokens: 10000,
   });
 
   return completion.choices[0]?.message?.content
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
           .join("\n\n");
 
       const amazonUrl = `https://www.amazon.ca/s?k=${encodeURIComponent(
-        productName
+        `Nestle ${productName}`
       )}`;
       if (amazonUrl) {
         answer += `\n\n[[amazon-button|${productName}]]${amazonUrl}[[/amazon-button]]`;
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: "You answer based on given context." },
         { role: "user", content: prompt },
       ],
-      max_completion_tokens: 15000,
+      max_completion_tokens: 20000,
     });
 
     const answer = completion.choices[0]?.message?.content?.trim() ?? "";

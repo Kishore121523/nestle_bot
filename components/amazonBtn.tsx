@@ -15,7 +15,7 @@ export default function AmazonBtn({ productName, amazonUrl, className }: AmazonB
   return (
     <button
       className={cn(
-        "border border-muted-foreground bg-background hover:bg-muted hover:text-foreground transition-colors duration-200 ease-in-out text-[11px] sm:text-[12px] p-[6px] rounded-[6px] cursor-pointer", className
+        "border border-muted-foreground bg-background hover:bg-muted hover:text-foreground transition-colors duration-200 ease-in-out text-[12px] sm:text-[13px] p-[6px] rounded-[6px] cursor-pointer", className
       )}   
       
     >
