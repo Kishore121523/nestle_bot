@@ -10,6 +10,7 @@ import { ExpandableSources } from "./ExpandableSources";
 import { typeOutText } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Image from "next/image";
+import AmazonBtn from "./amazonBtn";
 
 interface Message {
   role: "user" | "assistant";
@@ -237,20 +238,42 @@ export default function ChatWindow({
                     />
                     <div className="w-fit max-w-[75%] sm:max-w-[85%] px-3 py-2 rounded-md text-[15px] sm:text-[16px] mb-3 bg-background text-foreground">
                       <div className="markdown-message text-[15px] sm:text-[16px] leading-normal">
-                        <ReactMarkdown
-                          components={{
-                            a: (props) => (
-                              <a
-                                {...props}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary underline hover:text-primary/80 transition-colors"
-                              />
-                            ),
-                          }}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
+                        {(() => {
+                          const match = msg.content.match(/\[\[amazon-button\|(.+?)\]\](.*?)\[\[\/amazon-button\]\]/);
+                          const productName = match?.[1] || "";
+                          const amazonUrl = match?.[2] || "";
+                          const cleanedContent = msg.content.replace(/\[\[amazon-button\|.+?\]\].*?\[\[\/amazon-button\]\]/, "").trim();
+
+                          return (
+                            <>
+                              <ReactMarkdown
+                                components={{
+                                  a: (props) => (
+                                    <a
+                                      {...props}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary underline hover:text-primary/80 transition-colors"
+                                    />
+                                  ),
+                                }}
+                              >
+                                {cleanedContent}
+                              </ReactMarkdown>
+
+                              {productName && amazonUrl && (
+                                <div className="mt-3 w-full">
+                                  <p className="font-medium mb-1"> Other buying options: </p> 
+                                  <AmazonBtn
+                                    productName={productName}
+                                    amazonUrl={amazonUrl}
+                                    className="w-full justify-center"
+                                  />
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                       {Array.isArray(msg.sources) && msg.sources.length > 0 && (
                         <ExpandableSources sources={msg.sources} />

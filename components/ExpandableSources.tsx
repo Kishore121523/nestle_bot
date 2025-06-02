@@ -25,7 +25,7 @@ export function ExpandableSources({ sources }: { sources: string[] }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.2 }}
-          className="mt-2 text-left space-y-2 p-3 rounded-md bg-muted/40 text-muted-foreground text-[11px] sm:text-[13px] overflow-hidden"
+          className="mt-1 text-left space-y-2 p-3 rounded-md bg-muted/40 text-muted-foreground text-[11px] sm:text-[13px] overflow-hidden"
         >
           <ul className="space-y-1">
             {sources.map((url, i) => {

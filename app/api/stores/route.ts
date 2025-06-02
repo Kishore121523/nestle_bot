@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
+import { productKeywords } from "@/lib/utils";
 
 interface Product {
   name: string;
@@ -47,20 +48,7 @@ export async function POST(req: NextRequest) {
 
     // extract product from query
     const loweredQuery = query.toLowerCase();
-    const productKeywords = [
-      "kitkat",
-      "smarties",
-      "coffee crisp",
-      "aero",
-      "nescafe",
-      "boost",
-      "haagen-dazs",
-      "turtles",
-      "nesquik",
-      "delissio",
-      "purina",
-      "gerber",
-    ];
+
     const matchedProduct = productKeywords.find((p) =>
       loweredQuery.includes(p.toLowerCase())
     );
@@ -99,6 +87,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      matchedProduct,
       stores: matches,
     });
   } catch (err) {
