@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
         productName.charAt(0).toUpperCase() + productName.slice(1);
 
       let answer =
-        `Here are some nearby stores where you can find **${capitalizedProductName}**:\n\n` +
+        `Here are some nearby stores where you can find **${capitalizedProductName}**:\n\n<span style="margin-bottom: 8px; display: block;"></span>\n\n` +
         storeData.stores
           .map((s: Store) => {
             const productsFormatted = Array.isArray(s.products)

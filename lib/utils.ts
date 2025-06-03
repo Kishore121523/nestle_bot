@@ -164,24 +164,30 @@ export function typeOutText(
 ) {
   let i = 0;
 
-  // Mask all markdown links
-  const maskedText = fullText.replace(
+  // Mask all markdown links (e.g., [Label](URL)) → hide actual link during typing
+  let maskedText = fullText.replace(
     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
     (_, label) => `[${label}](#hidden)`
   );
 
-  // Mask amazon buttons as well
-  const fullyMasked = maskedText.replace(
+  // Mask custom Amazon buttons → hide them completely during typing
+  maskedText = maskedText.replace(
     /\[\[amazon-button\|(.+?)\]\](.*?)\[\[\/amazon-button\]\]/g,
     ""
   );
 
+  //Mask <span style="margin-bottom:..."></span> spacers → replace with invisible placeholder
+  maskedText = maskedText.replace(
+    /<span[^>]*style=['"][^'"]*margin-bottom:[^'"]*['"][^>]*>\s*<\/span>/gi,
+    ""
+  );
   function type() {
-    if (i < fullyMasked.length) {
-      callback(fullyMasked.slice(0, i + 1));
+    if (i < maskedText.length) {
+      callback(maskedText.slice(0, i + 1));
       i++;
       setTimeout(type, delay);
     } else {
+      // After typing, show the real full content with all original tags
       callback(fullText);
       done();
     }

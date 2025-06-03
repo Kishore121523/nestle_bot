@@ -11,6 +11,7 @@ import { typeOutText } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Image from "next/image";
 import AmazonBtn from "./amazonBtn";
+import rehypeRaw from 'rehype-raw';
 
 interface Message {
   role: "user" | "assistant";
@@ -58,7 +59,7 @@ export default function ChatWindow({
   useEffect(() => {
     if (open && messages.length === 0) {
       const welcome =
-        "Hello! I'm your Nestlé Assistant. Ask me anything about recipes, products, ingredients, or anything Nestlé-related.";
+        "Hello! I'm your Nestle Assistant. Ask me anything about recipes, products, ingredients, or anything Nestle-related.";
 
       setMessages([{ role: "assistant", content: "" }]);
       setShowTypingBubble(false);
@@ -247,6 +248,7 @@ export default function ChatWindow({
                           return (
                             <>
                               <ReactMarkdown
+                                rehypePlugins={[rehypeRaw]}
                                 components={{
                                   strong: ({ children }) => (
                                     <span className="font-semibold">{children}</span>
