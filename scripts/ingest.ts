@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import neo4j from "neo4j-driver";
 import "dotenv/config";
 
-// Setting up Neo4j connection
+// Neo4j connection setup
 const NEO4J_URI = process.env.NEO4J_URI!;
 const NEO4J_USER = process.env.NEO4J_USER!;
 const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD!;
@@ -15,7 +15,7 @@ const driver = neo4j.driver(
 );
 const session = driver.session();
 
-// This function normalizes the array of strings by trimming whitespace and converting to lowercase
+// Normalize and lowercase names, keep display names
 function normalizeArray(
   arr: string[]
 ): { name: string; displayName: string }[] {
@@ -25,7 +25,6 @@ function normalizeArray(
   }));
 }
 
-// This function reads the JSON file, parses it, and ingests the data into Neo4j
 async function ingestData() {
   const raw = await fs.readFile(
     "./scripts/nestle_extracted_entities.json",
@@ -46,29 +45,40 @@ async function ingestData() {
     const ingredients = normalizeArray(entities.ingredients || []);
     const topics = normalizeArray(entities.topics || []);
 
-    // This query creates a Chunk node and links it to Product, Category, Ingredient, and Topic nodes using the MERGE clause to avoid duplicates and FOREACH to handle the array of entities.
-    // The ON CREATE SET clause is used to set the displayName property only when the node is created. This is important to avoid overwriting existing nodes
     const query = `
-      MERGE (c:Chunk {id: $id})
+      MERGE (chunk:Chunk {id: $id})
+
       FOREACH (entry IN $products |
         MERGE (p:Product {name: entry.name})
         ON CREATE SET p.displayName = entry.displayName
-        MERGE (c)-[:MENTIONS_PRODUCT]->(p)
+        MERGE (chunk)-[:MENTIONS]->(p)
       )
-      FOREACH (entry IN $categories |
-        MERGE (cat:Category {name: entry.name})
-        ON CREATE SET cat.displayName = entry.displayName
-        MERGE (c)-[:MENTIONS_CATEGORY]->(cat)
+
+      FOREACH (cat IN $categories |
+        MERGE (c:Category {name: cat.name})
+        ON CREATE SET c.displayName = cat.displayName
+        FOREACH (p IN $products |
+          MERGE (prod:Product {name: p.name})
+          MERGE (prod)-[:BELONGS_TO]->(c)
+        )
       )
-      FOREACH (entry IN $ingredients |
-        MERGE (i:Ingredient {name: entry.name})
-        ON CREATE SET i.displayName = entry.displayName
-        MERGE (c)-[:MENTIONS_INGREDIENT]->(i)
+
+      FOREACH (ing IN $ingredients |
+        MERGE (i:Ingredient {name: ing.name})
+        ON CREATE SET i.displayName = ing.displayName
+        FOREACH (p IN $products |
+          MERGE (prod:Product {name: p.name})
+          MERGE (prod)-[:HAS_INGREDIENT]->(i)
+        )
       )
-      FOREACH (entry IN $topics |
-        MERGE (t:Topic {name: entry.name})
-        ON CREATE SET t.displayName = entry.displayName
-        MERGE (c)-[:MENTIONS_TOPIC]->(t)
+
+      FOREACH (top IN $topics |
+        MERGE (t:Topic {name: top.name})
+        ON CREATE SET t.displayName = top.displayName
+        FOREACH (p IN $products |
+          MERGE (prod:Product {name: p.name})
+          MERGE (prod)-[:RELATED_TO_TOPIC]->(t)
+        )
       )
     `;
 

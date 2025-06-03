@@ -39,28 +39,45 @@ const client = new AzureOpenAI({
   deployment,
 });
 
-// FALLBACK if Regex fails - Classify intent via LLM if uncertain
+// Classify intent via LLM - makes it more robust and reliable
 async function classifyIntentWithLLM(query: string): Promise<"store" | "info"> {
   const completion = await client.chat.completions.create({
     model: deployment,
     messages: [
       {
         role: "system",
-        content: `You are a classification system that determines the user's intent.
+        content: `You are an intent classification system that only responds with one word: **"store"** or **"info"**. Your job is to determine if the user's query is about:
 
-          Classify the user's query strictly into one of these categories:
-          - 'store': if the user wants to find or buy a product in a physical or online store
-          - 'info': if the user is asking for product details, ingredients, nutrition, or general knowledge
+          - **store** → The user wants to find, buy, shop, or locate a product in a **physical or online store**.
+          - **info** → The user is asking about **ingredients, nutrition, benefits, usage, product type, flavors, dietary info, or general product details**.
 
-          Respond with exactly one word: "store" or "info".
+          ### Instructions:
+          - Think step-by-step and be strict: pick only **one** of the two categories.
+          - Ignore vague phrases unless they clearly imply **buying** or **shopping** intent.
+          - If the query compares or describes a product, it's **info**.
+          - If the query mentions where, how, or places to get a product, it's **store**.
+          - Never answer with anything except **"store"** or **"info"**.
 
-          Examples:
-          "Where can I buy KitKat?" → store  
-          "How many calories in KitKat?" → info  
-          "Nearby stores that sell Smarties" → store  
-          "What is in a Coffee Crisp?" → info  
-          "Find a place to purchase Aero" → store  
-          "Is Boost good for kids?" → info`,
+          ### Examples:
+          - "Where can I buy KitKat?" → store  
+          - "What are the ingredients in KitKat?" → info  
+          - "Nearby stores that sell Smarties" → store  
+          - "How many calories in Aero bar?" → info  
+          - "Find a place to purchase Coffee Crisp" → store  
+          - "Is Boost good for children?" → info  
+          - "What flavors does Nescafé have?" → info  
+          - "Can I get Smarties in Calgary?" → store  
+          - "What is in a Coffee Crisp?" → info  
+          - "Does KitKat contain nuts?" → info  
+          - "Shop for Haagen-Dazs near me" → store  
+          - "How to use Carnation condensed milk?" → info  
+          - "Where is Nestlé Pure Life sold?" → store
+
+          Classify this query:
+          Query: "${query}"
+
+          Respond with only: **store** or **info**
+          `,
       },
       { role: "user", content: `Query: "${query}"` },
     ],
@@ -85,40 +102,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check for store intent and product keywords
     const lowered = query.toLowerCase();
+
+    // Strict check
     const storeRegex =
-      /\b(\ where (can i|do i)? (buy|get|purchase|find|shop for)|\ find (a|the)? (store|place) (to )?(buy|get|shop)|\ buy|purchase|shop for|\ get (from|nearby|at)|\ store (near me|close by|nearby)|\ places? (to )?(buy|get)\ )\b/;
+      /\b((where|nearby)\s+(can i|do i)?\s*(buy|get|purchase|find)\b|\b(find|shop)\s+(a|the)?\s*(store|place)\b|\bstore\s+(near me|nearby|closest|close by)\b|\bplaces?\s+to\s+(buy|get)\b)/;
 
-    let intent: "store" | "info" = "info";
+    let intent: "store" | "info";
 
-    if (storeRegex.test(lowered)) {
+    // Start with LLM classifier
+    intent = await classifyIntentWithLLM(query);
+
+    // Fallback to make sure LLM is right
+    const isLikelyStore = storeRegex.test(lowered);
+
+    if (intent === "info" && isLikelyStore) {
+      console.log(
+        "LLM says info, but regex is very confident about store intent. Overriding."
+      );
       intent = "store";
-    } else {
-      intent = await classifyIntentWithLLM(query); // Go to LLM classification if regex misses
-      // console.log(intent, "intent classified by LLM");
     }
 
-    // If intent is "store", we need lat/lng
+    // "Store" intent branch - Calls stores API
     if (intent === "store") {
       const storeRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/stores`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query,
-            lat,
-            lng,
-            radiusKm: 10,
-          }),
+          body: JSON.stringify({ query, lat, lng, radiusKm: 10 }),
         }
       );
 
       if (!storeRes.ok) {
-        console.error("Store fetch failed:", await storeRes.text());
+        const errorText = await storeRes.text();
+        console.error("Store fetch failed:", errorText);
         return NextResponse.json(
-          { success: false, error: "Failed to fetch store data" },
+          { success: false, error: errorText },
           { status: 500 }
         );
       }
@@ -182,7 +202,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, answer });
     }
 
-    // GraphRAG fallback if the intent is not "info"
+    // "Info" intent branch - Calls search API
     const searchRes = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
       {
@@ -192,7 +212,17 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    const { matches } = await searchRes.json();
+    const searchJson = await searchRes.json();
+
+    // Count-based response
+    if (searchJson.type === "count") {
+      return NextResponse.json({
+        success: true,
+        answer: `**Product Count Result**\n\n${searchJson.message}`,
+      });
+    }
+
+    const matches: Match[] = searchJson.matches;
 
     if (!matches || matches.length === 0) {
       return NextResponse.json({
@@ -203,9 +233,7 @@ export async function POST(req: NextRequest) {
     }
 
     const contextLines = matches
-      .map((m: Match, i: number) =>
-        typeof m.content === "string" ? `Chunk ${i + 1}:\n${m.content}` : null
-      )
+      .map((m, i) => `Chunk ${i + 1}:\n${m.content}`)
       .filter(Boolean);
 
     const context = contextLines.join("\n\n");
@@ -247,7 +275,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       answer,
-      sources: matches.map((m: Match) => ({
+      sources: matches.map((m) => ({
         id: m.id,
         sourceUrl: m.sourceUrl,
         chunkIndex: m.chunkIndex,
