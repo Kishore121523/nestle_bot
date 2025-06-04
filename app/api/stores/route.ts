@@ -37,7 +37,7 @@ const haversineDistance = (
 
 export async function POST(req: NextRequest) {
   try {
-    const { lat, lng, radiusKm = 10, query } = await req.json();
+    const { lat, lng, radiusKm = 30, query } = await req.json();
 
     if (typeof lat !== "number" || typeof lng !== "number" || !query) {
       return NextResponse.json(

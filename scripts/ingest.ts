@@ -40,11 +40,13 @@ async function ingestData() {
       continue;
     }
 
+    // Normalize all entity types
     const products = normalizeArray(entities.products || []);
     const categories = normalizeArray(entities.categories || []);
     const ingredients = normalizeArray(entities.ingredients || []);
     const topics = normalizeArray(entities.topics || []);
 
+    // Create Product nodes and relate them to the chunk
     const query = `
       MERGE (chunk:Chunk {id: $id})
 

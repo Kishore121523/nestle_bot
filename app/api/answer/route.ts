@@ -1,8 +1,10 @@
+import { classifyQueryIntent } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 
 export const dynamic = "force-dynamic";
 
+// -------------------- Types --------------------
 type StoreProduct = {
   name: string;
   price: number;
@@ -20,13 +22,16 @@ type Store = {
 
 type Match = {
   id: string;
+  content: string;
   sourceUrl: string;
   chunkIndex: number;
-  entities: string[];
   score: number;
-  content: string;
+  entities: Record<string, string[]>;
+  entityScore: number;
+  finalScore: number;
 };
 
+// -------------------- Azure OpenAI (o3 mini) Setup --------------------
 const endpoint = process.env.AZURE_O3_MINI_ENDPOINT!;
 const apiKey = process.env.AZURE_O3_MINI_KEY!;
 const apiVersion = process.env.AZURE_O3_MINI_API_VERSION!;
@@ -39,7 +44,10 @@ const client = new AzureOpenAI({
   deployment,
 });
 
-// Classify intent via LLM - makes it more robust and reliable
+// -------------------- Intent Classification --------------------
+// Classify intent via LLM
+// Returns "store" if the query is related to purchasing or locating products,
+// Returns "info" if it's about ingredients, usage, nutrition, or general details.
 async function classifyIntentWithLLM(query: string): Promise<"store" | "info"> {
   const completion = await client.chat.completions.create({
     model: deployment,
@@ -91,6 +99,7 @@ async function classifyIntentWithLLM(query: string): Promise<"store" | "info"> {
     : "info";
 }
 
+// -------------------- Main Handler --------------------
 export async function POST(req: NextRequest) {
   try {
     const { query, lat, lng } = await req.json();
@@ -102,35 +111,55 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // -------------------- Count Intent --------------------
+    // countIntent can be - "total" || "category" || "search"
+    const countIntent = classifyQueryIntent(query);
+
+    if (countIntent === "total" || countIntent === "category") {
+      const countRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        }
+      );
+
+      const countJson = await countRes.json();
+
+      return NextResponse.json({
+        success: true,
+        answer: `**Product Count Result**\n\n${countJson.message}`,
+      });
+    }
+
+    // -------------------- Store Intent --------------------
     const lowered = query.toLowerCase();
+    let storeIntent: "store" | "info";
 
     // Strict check
     const storeRegex =
       /\b((where|nearby)\s+(can i|do i)?\s*(buy|get|purchase|find)\b|\b(find|shop)\s+(a|the)?\s*(store|place)\b|\bstore\s+(near me|nearby|closest|close by)\b|\bplaces?\s+to\s+(buy|get)\b)/;
 
-    let intent: "store" | "info";
-
-    // Start with LLM classifier
-    intent = await classifyIntentWithLLM(query);
-
-    // Fallback to make sure LLM is right
+    // Start with LLM classifier and Regex fallback to make sure LLM is right
+    storeIntent = await classifyIntentWithLLM(query);
     const isLikelyStore = storeRegex.test(lowered);
 
-    if (intent === "info" && isLikelyStore) {
+    if (storeIntent === "info" && isLikelyStore) {
       console.log(
         "LLM says info, but regex is very confident about store intent. Overriding."
       );
-      intent = "store";
+      storeIntent = "store";
     }
 
     // "Store" intent branch - Calls stores API
-    if (intent === "store") {
+    if (storeIntent === "store") {
       const storeRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/stores`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, lat, lng, radiusKm: 10 }),
+          body: JSON.stringify({ query, lat, lng, radiusKm: 30 }),
         }
       );
 
@@ -144,7 +173,6 @@ export async function POST(req: NextRequest) {
       }
 
       const storeData = await storeRes.json();
-
       if (!storeData?.stores?.length) {
         return NextResponse.json({
           success: true,
@@ -202,27 +230,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, answer });
     }
 
+    // -------------------- Info Intent --------------------
     // "Info" intent branch - Calls search API
     const searchRes = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, top: 3 }),
+        body: JSON.stringify({ query, top: 5 }),
       }
     );
 
     const searchJson = await searchRes.json();
 
-    // Count-based response
-    if (searchJson.type === "count") {
-      return NextResponse.json({
-        success: true,
-        answer: `**Product Count Result**\n\n${searchJson.message}`,
-      });
-    }
-
-    const matches: Match[] = searchJson.matches;
+    let matches: Match[] = searchJson.matches;
 
     if (!matches || matches.length === 0) {
       return NextResponse.json({
@@ -232,11 +253,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const contextLines = matches
-      .map((m, i) => `Chunk ${i + 1}:\n${m.content}`)
-      .filter(Boolean);
+    // Sort by finalScore descending
+    matches = matches.sort((a, b) => (b.finalScore ?? 0) - (a.finalScore ?? 0));
 
-    const context = contextLines.join("\n\n");
+    // Build context using sorted matches
+    const context = matches
+      .map((m, i) => `Chunk ${i + 1}:\n${m.content}`)
+      .filter(Boolean)
+      .join("\n\n");
 
     const prompt = `You are a helpful assistant that answers questions using only the provided context from the Nestlé Canada website.
 
@@ -261,14 +285,16 @@ export async function POST(req: NextRequest) {
     Respond in clean Markdown with clear paragraph spacing.
     `;
 
+    // console.time("llm");
     const completion = await client.chat.completions.create({
       model: deployment,
       messages: [
         { role: "system", content: "You answer based on given context." },
         { role: "user", content: prompt },
       ],
-      max_completion_tokens: 20000,
+      max_completion_tokens: 2048,
     });
+    // console.timeEnd("llm");
 
     const answer = completion.choices[0]?.message?.content?.trim() ?? "";
 

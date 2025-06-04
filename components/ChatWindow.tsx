@@ -59,7 +59,7 @@ export default function ChatWindow({
   useEffect(() => {
     if (open && messages.length === 0) {
       const welcome =
-        "Hello! I'm your Nestle Assistant. Ask me anything about recipes, products, ingredients, or anything Nestle-related.";
+        "Hi! I'm your Nestle Assistant. Ask me about recipes, products, ingredients, where to find items nearby, or how many products are in a specific category.";
 
       setMessages([{ role: "assistant", content: "" }]);
       setShowTypingBubble(false);

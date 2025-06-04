@@ -8,6 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 // Chunks
 const MAX_CHARS = 700;
 
+//
 export function cleanAndChunkText(
   paragraphs: string[],
   maxChars = MAX_CHARS
@@ -88,6 +89,28 @@ export const stopwords = new Set([
   "did",
 ]);
 
+export const stopWordsForNeo4j = new Set([
+  "product",
+  "products",
+  "item",
+  "items",
+  "category",
+  "categories",
+  "food",
+  "support",
+  "tools",
+  "prepared",
+  "other",
+  "total",
+  "many",
+  "under",
+  "over",
+  "less",
+  "more",
+  "around",
+  "with",
+]);
+
 // Synonyms - could be expanded or loaded from a file
 // This is a simple synonym map for demonstration purposes
 export const synonymMap: Record<string, string[]> = {
@@ -156,6 +179,7 @@ export const synonymMap: Record<string, string[]> = {
   ],
 };
 
+// Type out text animation with mask
 export function typeOutText(
   fullText: string,
   callback: (chunk: string) => void,
@@ -210,3 +234,34 @@ export const productKeywords = [
   "purina",
   "gerber",
 ];
+
+// Determine query intent for search API:
+// - Returns "total" for overall product count queries
+// - Returns "category" for category-specific count queries
+// - Returns "search" for general informational or lookup queries
+export function classifyQueryIntent(
+  text: string
+): "total" | "category" | "search" {
+  const lowered = text.toLowerCase().replace(/\s+/g, " ").trim();
+
+  const isTotal =
+    lowered === "total number of products available" ||
+    lowered === "how many nestle products are listed" ||
+    ([
+      /\bhow many (nestl[eé]?)? ?(products|items)? (are )?(available|listed)?\b/,
+      /\btotal number of (products|items)\b/,
+      /\bwhat is the total (number|amount) of (products|items)\b/,
+      /\b(how many|number of|count of|list of|total)\b.*\b(nestl[eé]?|products?|items?)\b/,
+    ].some((r) => r.test(lowered)) &&
+      !/\b(category|categories|under|related to|type)\b/.test(lowered));
+
+  const isCount =
+    /\b(how many|total|number of|count of|list of|available)\b/.test(lowered) &&
+    /\b(nestl[eé]?|product|products|item|items|category|categories)\b/.test(
+      lowered
+    );
+
+  if (isTotal) return "total";
+  if (isCount) return "category";
+  return "search";
+}
