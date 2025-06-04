@@ -30,12 +30,7 @@ import { AzureOpenAI } from "openai";
 import { NestleDocument } from "@/lib/embedding/uploadToSearch";
 import { getEntitiesForChunk } from "@/lib/graph/getEntitiesForChunk";
 import { getProductCountsFromGraph } from "@/lib/graph/getEntityCounts";
-import {
-  classifyQueryIntent,
-  stopwords,
-  stopWordsForNeo4j,
-  synonymMap,
-} from "@/lib/utils";
+import { stopwords, stopWordsForNeo4j, synonymMap } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -158,7 +153,7 @@ async function handleCountQuery(query: string, intent: "total" | "category") {
 export async function POST(req: NextRequest) {
   // console.time("total");
   try {
-    const { query, top } = await req.json();
+    const { query, top, countIntent } = await req.json();
 
     if (!query || typeof query !== "string") {
       return NextResponse.json(
@@ -167,9 +162,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const intent = classifyQueryIntent(query);
-    if (intent === "total" || intent === "category") {
-      const countResponse = await handleCountQuery(query, intent);
+    if (countIntent === "total" || countIntent === "category") {
+      const countResponse = await handleCountQuery(query, countIntent);
       return NextResponse.json(countResponse);
     }
 

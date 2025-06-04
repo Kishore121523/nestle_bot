@@ -8,7 +8,6 @@ export function cn(...inputs: ClassValue[]) {
 // Chunks
 const MAX_CHARS = 700;
 
-//
 export function cleanAndChunkText(
   paragraphs: string[],
   maxChars = MAX_CHARS
@@ -110,6 +109,21 @@ export const stopWordsForNeo4j = new Set([
   "around",
   "with",
 ]);
+
+export const productKeywords = [
+  "kitkat",
+  "smarties",
+  "coffee crisp",
+  "aero",
+  "nescafe",
+  "boost",
+  "haagen-dazs",
+  "turtles",
+  "nesquik",
+  "delissio",
+  "purina",
+  "gerber",
+];
 
 // Synonyms - could be expanded or loaded from a file
 // This is a simple synonym map for demonstration purposes
@@ -220,48 +234,112 @@ export function typeOutText(
   type();
 }
 
-export const productKeywords = [
-  "kitkat",
-  "smarties",
-  "coffee crisp",
-  "aero",
-  "nescafe",
-  "boost",
-  "haagen-dazs",
-  "turtles",
-  "nesquik",
-  "delissio",
-  "purina",
-  "gerber",
-];
+// Strict check using Regex
+export const storeRegex =
+  /\b((where|nearby)\s+(can i|do i)?\s*(buy|get|purchase|find)\b|\b(find|shop)\s+(a|the)?\s*(store|place)\b|\bstore\s+(near me|nearby|closest|close by)\b|\bplaces?\s+to\s+(buy|get)\b)/;
 
-// Determine query intent for search API:
-// - Returns "total" for overall product count queries
-// - Returns "category" for category-specific count queries
-// - Returns "search" for general informational or lookup queries
-export function classifyQueryIntent(
-  text: string
-): "total" | "category" | "search" {
-  const lowered = text.toLowerCase().replace(/\s+/g, " ").trim();
+export const totalRegex = new RegExp(
+  String.raw`^(what is|how many|what's|give me|show me)?\s*(the\s*)?(total|number of|count of|list of)?\s*(nestl[eé]?|all)?\s*(products?|items?)\s*(available|listed)?\s*(in\s+canada)?\s*[\?]?$`,
+  "i"
+);
 
-  const isTotal =
-    lowered === "total number of products available" ||
-    lowered === "how many nestle products are listed" ||
-    ([
-      /\bhow many (nestl[eé]?)? ?(products|items)? (are )?(available|listed)?\b/,
-      /\btotal number of (products|items)\b/,
-      /\bwhat is the total (number|amount) of (products|items)\b/,
-      /\b(how many|number of|count of|list of|total)\b.*\b(nestl[eé]?|products?|items?)\b/,
-    ].some((r) => r.test(lowered)) &&
-      !/\b(category|categories|under|related to|type)\b/.test(lowered));
+export const categoryRegex = new RegExp(
+  String.raw`^\s*(how many|what is|what's|give me|show me)?\s*(the\s*)?(total|number of|count of|list of)?\s+([a-z\s\-]+)?\s+(products?|items?)\s+(in|under|related to)\s+(category|categories|type|group)\s*\?*$`,
+  "i"
+);
 
-  const isCount =
-    /\b(how many|total|number of|count of|list of|available)\b/.test(lowered) &&
-    /\b(nestl[eé]?|product|products|item|items|category|categories)\b/.test(
-      lowered
-    );
+// PROMPTS
+export const classifyIntentPrompt = (query: string) => `
+You are a strict classification system. Your job is to analyze the user query and return a machine-readable JSON object with two fields:
 
-  if (isTotal) return "total";
-  if (isCount) return "category";
-  return "search";
+{
+  "mainIntent": "store" | "info",
+  "countIntent": "total" | "category" | "search"
 }
+
+## INTENT RULES
+
+- "mainIntent":
+  - "store" → The user wants to find, buy, locate, or shop for a product (e.g., "Where can I buy KitKat?", "Stores near me").
+  - "info" → The user is asking about product details like ingredients, nutrition, flavor, usage, comparisons, or general facts.
+
+- "countIntent":
+  - "total" → The user is asking for the **total number of Nestlé products** (e.g., "How many Nestlé products exist?", "Total items listed").
+  - "category" → The user is asking for a count in a **specific product group** like chocolate, drinks, snacks, etc. (e.g., "How many chocolate items?", "Products in cereal category").
+  - "search" → Any other request that is not a clear count (e.g., recipes, benefits, nutrition, how to use, product facts).
+
+---
+
+## OUTPUT RULES
+
+- Return only a valid **JSON object**.
+- Use **lowercase values** exactly as specified.
+- Do not add explanation or any extra text.
+- Do not return ambiguous or mixed categories.
+- If unclear, default "countIntent" to "search".
+
+---
+
+## EXAMPLES
+
+Query: "Where can I buy KitKat?"  
+→ { "mainIntent": "store", "countIntent": "search" }
+
+Query: "How many Nestlé chocolates are there?"  
+→ { "mainIntent": "info", "countIntent": "category" }
+
+Query: "How many Nestlé products exist in total?"  
+→ { "mainIntent": "info", "countIntent": "total" }
+
+Query: "What are the ingredients in Coffee Crisp?"  
+→ { "mainIntent": "info", "countIntent": "search" }
+
+Query: "Is Boost good for kids?"  
+→ { "mainIntent": "info", "countIntent": "search" }
+
+Query: "Shop for Smarties near me"  
+→ { "mainIntent": "store", "countIntent": "search" }
+
+Query: "Where to buy chocolate?"  
+→ { "mainIntent": "store", "countIntent": "search" }
+
+Query: "How many Nestlé snacks are available?"  
+→ { "mainIntent": "info", "countIntent": "category" }
+
+Query: "How to make brownies with Nestlé products?"  
+→ { "mainIntent": "info", "countIntent": "search" }
+
+---
+
+Now classify the following query **strictly following the rules above**:
+
+Query: "${query}"
+
+Return ONLY the JSON object on a single line.
+`;
+
+// Generate answer prompt
+
+export const generateAnswerPrompt = (context: string, query: string) => `
+You are a helpful assistant that answers questions using only the provided context from the Nestlé Canada website.
+
+Your response must follow this strict formatting in **Markdown**:
+
+- Start with a clear, short introductory paragraph.
+- Use **numbered or bulleted lists** where relevant.
+- Each list item should have:
+  - A **bolded title** (e.g., product name, recipe, or concept)
+  - A new line with its short description underneath.
+- For instructions, nutrition facts, or extra details, use a italic font one- or two-word sub-heading like **Tips**, **Instructions**, or **Nutrition**, followed by ':' and write the content after that.
+- Add line breaks ('\\n\\n') between items and sections for clarity.
+- End with a summary or call-to-action if appropriate.
+- Do NOT add external or unrelated content.
+
+Context:
+${context}
+
+Question:
+${query}
+
+Respond in clean Markdown with clear paragraph spacing.
+`;

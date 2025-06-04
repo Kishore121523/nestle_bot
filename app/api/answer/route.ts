@@ -1,10 +1,21 @@
-import { classifyQueryIntent } from "@/lib/utils";
+import {
+  categoryRegex,
+  classifyIntentPrompt,
+  generateAnswerPrompt,
+  storeRegex,
+  totalRegex,
+} from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { AzureOpenAI } from "openai";
 
 export const dynamic = "force-dynamic";
 
 // -------------------- Types --------------------
+type IntentClassification = {
+  mainIntent: "store" | "info";
+  countIntent: "total" | "category" | "search";
+};
+
 type StoreProduct = {
   name: string;
   price: number;
@@ -45,65 +56,44 @@ const client = new AzureOpenAI({
 });
 
 // -------------------- Intent Classification --------------------
-// Classify intent via LLM
-// Returns "store" if the query is related to purchasing or locating products,
-// Returns "info" if it's about ingredients, usage, nutrition, or general details.
-async function classifyIntentWithLLM(query: string): Promise<"store" | "info"> {
+async function classifyIntentWithLLM(
+  query: string
+): Promise<IntentClassification> {
   const completion = await client.chat.completions.create({
     model: deployment,
     messages: [
       {
         role: "system",
-        content: `You are an intent classification system that only responds with one word: **"store"** or **"info"**. Your job is to determine if the user's query is about:
-
-          - **store** → The user wants to find, buy, shop, or locate a product in a **physical or online store**.
-          - **info** → The user is asking about **ingredients, nutrition, benefits, usage, product type, flavors, dietary info, or general product details**.
-
-          ### Instructions:
-          - Think step-by-step and be strict: pick only **one** of the two categories.
-          - Ignore vague phrases unless they clearly imply **buying** or **shopping** intent.
-          - If the query compares or describes a product, it's **info**.
-          - If the query mentions where, how, or places to get a product, it's **store**.
-          - Never answer with anything except **"store"** or **"info"**.
-
-          ### Examples:
-          - "Where can I buy KitKat?" → store  
-          - "What are the ingredients in KitKat?" → info  
-          - "Nearby stores that sell Smarties" → store  
-          - "How many calories in Aero bar?" → info  
-          - "Find a place to purchase Coffee Crisp" → store  
-          - "Is Boost good for children?" → info  
-          - "What flavors does Nescafé have?" → info  
-          - "Can I get Smarties in Calgary?" → store  
-          - "What is in a Coffee Crisp?" → info  
-          - "Does KitKat contain nuts?" → info  
-          - "Shop for Haagen-Dazs near me" → store  
-          - "How to use Carnation condensed milk?" → info  
-          - "Where is Nestlé Pure Life sold?" → store
-
-          Classify this query:
-          Query: "${query}"
-
-          Respond with only: **store** or **info**
-          `,
+        content: classifyIntentPrompt(query),
       },
       { role: "user", content: `Query: "${query}"` },
     ],
     max_completion_tokens: 10000,
   });
 
-  return completion.choices[0]?.message?.content
-    ?.toLowerCase()
-    .includes("store")
-    ? "store"
-    : "info";
+  try {
+    const content = completion.choices[0]?.message?.content?.trim() ?? "";
+    const parsed = JSON.parse(content);
+
+    if (
+      parsed &&
+      (parsed.mainIntent === "store" || parsed.mainIntent === "info") &&
+      ["total", "category", "search"].includes(parsed.countIntent)
+    ) {
+      return parsed as IntentClassification;
+    }
+
+    throw new Error("Invalid response format");
+  } catch (err) {
+    console.error("Failed to parse intent JSON:", err);
+    return { mainIntent: "info", countIntent: "search" };
+  }
 }
 
 // -------------------- Main Handler --------------------
 export async function POST(req: NextRequest) {
   try {
     const { query, lat, lng } = await req.json();
-
     if (!query || typeof query !== "string") {
       return NextResponse.json(
         { error: "Missing or invalid query" },
@@ -111,22 +101,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // -------------------- Count Intent --------------------
-    // countIntent can be - "total" || "category" || "search"
-    const countIntent = classifyQueryIntent(query);
+    const lowered = query.toLowerCase();
 
+    // Get the intent of the user query
+    const { mainIntent: rawMainIntent, countIntent: rawCountIntent } =
+      await classifyIntentWithLLM(query);
+
+    let mainIntent = rawMainIntent;
+    let countIntent = rawCountIntent;
+
+    // Regex-based confidence correction for count intent
+    const isLikelyTotal = totalRegex.test(lowered);
+    const isLikelyCategory = categoryRegex.test(lowered);
+
+    // Fallback check with strict check using regex (for count)
+    if (countIntent === "search" && (isLikelyTotal || isLikelyCategory)) {
+      console.log(
+        `LLM says search, but regex suggests ${
+          isLikelyTotal ? "total" : "category"
+        }. Overriding.`
+      );
+      countIntent = isLikelyTotal ? "total" : "category";
+    }
+
+    // -------------------- Count Intent --------------------
     if (countIntent === "total" || countIntent === "category") {
       const countRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify({ query, countIntent }),
         }
       );
 
       const countJson = await countRes.json();
-
       return NextResponse.json({
         success: true,
         answer: `**Product Count Result**\n\n${countJson.message}`,
@@ -134,26 +143,17 @@ export async function POST(req: NextRequest) {
     }
 
     // -------------------- Store Intent --------------------
-    const lowered = query.toLowerCase();
-    let storeIntent: "store" | "info";
-
-    // Strict check
-    const storeRegex =
-      /\b((where|nearby)\s+(can i|do i)?\s*(buy|get|purchase|find)\b|\b(find|shop)\s+(a|the)?\s*(store|place)\b|\bstore\s+(near me|nearby|closest|close by)\b|\bplaces?\s+to\s+(buy|get)\b)/;
-
-    // Start with LLM classifier and Regex fallback to make sure LLM is right
-    storeIntent = await classifyIntentWithLLM(query);
     const isLikelyStore = storeRegex.test(lowered);
 
-    if (storeIntent === "info" && isLikelyStore) {
+    // Fallback check with strict check using regex (for store)
+    if (mainIntent === "info" && isLikelyStore) {
       console.log(
         "LLM says info, but regex is very confident about store intent. Overriding."
       );
-      storeIntent = "store";
+      mainIntent = "store";
     }
 
-    // "Store" intent branch - Calls stores API
-    if (storeIntent === "store") {
+    if (mainIntent === "store") {
       const storeRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/stores`,
         {
@@ -231,7 +231,6 @@ export async function POST(req: NextRequest) {
     }
 
     // -------------------- Info Intent --------------------
-    // "Info" intent branch - Calls search API
     const searchRes = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
       {
@@ -242,7 +241,6 @@ export async function POST(req: NextRequest) {
     );
 
     const searchJson = await searchRes.json();
-
     let matches: Match[] = searchJson.matches;
 
     if (!matches || matches.length === 0) {
@@ -253,48 +251,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Sort by finalScore descending
     matches = matches.sort((a, b) => (b.finalScore ?? 0) - (a.finalScore ?? 0));
 
-    // Build context using sorted matches
     const context = matches
       .map((m, i) => `Chunk ${i + 1}:\n${m.content}`)
-      .filter(Boolean)
       .join("\n\n");
 
-    const prompt = `You are a helpful assistant that answers questions using only the provided context from the Nestlé Canada website.
-
-    Your response must follow this strict formatting in **Markdown**:
-
-    - Start with a clear, short introductory paragraph.
-    - Use **numbered or bulleted lists** where relevant.
-    - Each list item should have:
-      - A **bolded title** (e.g., product name, recipe, or concept)
-      - A new line with its short description underneath.
-    - For instructions, nutrition facts, or extra details, use a italic font one- or two-word sub-heading like **Tips**, **Instructions**, or **Nutrition**, followed by ':' and write the content after that.
-    - Add line breaks ('\n\n') between items and sections for clarity.
-    - End with a summary or call-to-action if appropriate.
-    - Do NOT add external or unrelated content.
-
-    Context:
-    ${context}
-
-    Question:
-    ${query}
-
-    Respond in clean Markdown with clear paragraph spacing.
-    `;
-
-    // console.time("llm");
     const completion = await client.chat.completions.create({
       model: deployment,
       messages: [
         { role: "system", content: "You answer based on given context." },
-        { role: "user", content: prompt },
+        { role: "user", content: generateAnswerPrompt(context, query) },
       ],
       max_completion_tokens: 2048,
     });
-    // console.timeEnd("llm");
 
     const answer = completion.choices[0]?.message?.content?.trim() ?? "";
 
@@ -316,88 +286,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-/*  LangChain is significantly slower than direct API calls. Add commentMore actions
-    Useful for complex chains, but may add latency for simpler tasks.
-    Response time comparison:
-    LangChain-based method:
-        POST /api/search  → 200 OK in 2528ms
-        POST /api/answer  → 200 OK in 82068ms
-      Low-level API method:
-        POST /api/search  → 200 OK in 2580ms
-        POST /api/answer  → 200 OK in 17736ms
-*/
-
-// /* eslint-disable @typescript-eslint/no-explicit-any */
-// import { NextRequest, NextResponse } from "next/server";
-// import { llm, nestlePrompt } from "@/lib/langchain";
-// import { RunnableSequence } from "@langchain/core/runnables";
-
-// export const dynamic = "force-dynamic";
-
-// const answerChain = RunnableSequence.from([
-//   async (input: { query: string; context: string }) => ({
-//     question: input.query,
-//     context: input.context,
-//   }),
-//   nestlePrompt,
-//   llm,
-// ]);
-
-// export async function POST(req: NextRequest) {
-//   try {
-//     const { query } = await req.json();
-
-//     if (!query || typeof query !== "string") {
-//       return NextResponse.json({ error: "Invalid query" }, { status: 400 });
-//     }
-
-//     // Step 1: Call /api/search
-//     const searchRes = await fetch(
-//       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
-//       {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ query, top: 3 }),
-//       }
-//     );
-
-//     const { matches } = await searchRes.json();
-
-//     if (!matches || matches.length === 0) {
-//       return NextResponse.json({
-//         success: true,
-//         answer: "Sorry, I couldn't find any relevant information.",
-//       });
-//     }
-
-//     // Step 2: Build context
-//     const contextLines = matches
-//       .map((m: any, i: number) =>
-//         typeof m.content === "string" ? `Chunk ${i + 1}:\n${m.content}` : null
-//       )
-//       .filter(Boolean)
-//       .join("\n\n");
-
-//     // Step 3: Run LangChain LLM chain
-//     const result = await answerChain.invoke({ query, context: contextLines });
-//     const answer = typeof result === "string" ? result : result.content;
-
-//     return NextResponse.json({
-//       success: true,
-//       answer,
-//       sources: matches.map((m: any) => ({
-//         id: m.id,
-//         sourceUrl: m.sourceUrl,
-//         chunkIndex: m.chunkIndex,
-//         entities: m.entities,
-//         score: m.score,
-//       })),
-//     });
-//   } catch (err) {
-//     return NextResponse.json(
-//       { success: false, error: (err as Error).message },
-//       { status: 500 }
-//     );
-//   }
-// }
