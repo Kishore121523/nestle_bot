@@ -68,7 +68,7 @@ async function classifyIntentWithLLM(
       },
       { role: "user", content: `Query: "${query}"` },
     ],
-    max_completion_tokens: 10000,
+    max_completion_tokens: 100,
   });
 
   try {
