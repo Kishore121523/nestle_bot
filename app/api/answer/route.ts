@@ -68,11 +68,12 @@ async function classifyIntentWithLLM(
       },
       { role: "user", content: `Query: "${query}"` },
     ],
-    max_completion_tokens: 100,
+    max_completion_tokens: 2048,
   });
 
   try {
     const content = completion.choices[0]?.message?.content?.trim() ?? "";
+    console.log(content);
     const parsed = JSON.parse(content);
 
     if (
