@@ -21,14 +21,14 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 
 - **Backend Updates**: While all scraping, embedding, and entity ingestion logic is scripted, automated cron jobs can be easily implemented that will be used to periodically run these scripts, ensuring the chatbot stays up to date with the latest content from the source website.
 
-- **Cold Start Latency on Azure Basic Plan**: Since the "Always On" feature is not available on the Basic App Service plan, the chatbot may experience slight delays when handling the first request after a period of inactivity.  
+- **Cold Start Latency on Azure Basic Plan**: Since the "Always On" feature is not available on the Basic App Service plan, the chatbot may experience slight delays when handling the first request after a period of inactivity. 
    ➤ **Workaround**: A lightweight ping script or an external cron job (UptimeRobot) is used to send a request to the app every 5 minutes to keep it warm.
 
 - **Structured Count Queries**: The chatbot can now accurately respond to structured queries like
 *“How many products does Nestle have in the chocolate category?”* by querying the underlying Neo4j graph using Cypher. This goes beyond standard RAG limitations.
 
 - **Location-Aware Store Finder**: When a user asks, *“Where can I buy KitKat?”*, the bot uses the user's current geolocation to find relevant store matches.
-   ➤ **Bonus UX**: Store names in the response are clickable and open the exact location on Google Maps in a new tab.
+     ➤ **Bonus UX**: Store names in the response are clickable and open the exact location on Google Maps in a new tab.
 
 - **Amazon Purchase Link Integration**: The bot dynamically generates a buy link using the product name and appends it to the response.
 
