@@ -109,6 +109,7 @@ async function handleCountQuery(query: string, intent: "total" | "category") {
   const queryWords = lowerQuery
     .split(/\W+/)
     .filter((w) => w.length > 2 && !stopWordsForNeo4j.has(w));
+
   const { categories } = counts;
 
   const matchedCategories = Object.entries(categories).filter(([cat]) => {
