@@ -35,6 +35,8 @@ Nestle Assistant is an AI-powered chatbot integrated with MadeWithNestle.ca that
 
 - Live Azure Deployed Link: [Nestle Assistant](https://nestle-assistant-fnancbd7d7hzfxbm.canadacentral-01.azurewebsites.net/)
 
+- Documentation: [Nestle Assistant (~Kishore Yogeswaran)](https://docs.google.com/document/d/1uO0T3inMeeYlvTT1YSYf-LMg_AsfcrYl0nUBSz0sf0E/edit?usp=sharing)
+
 - Watch the full demo of the Nestle Assistant in action:
 [Nestlé Assistant Screen Recording
 ](https://drive.google.com/file/d/1SosUPyeq0ZiIP6mS-jvtyd281xOLsAF3/view?usp=sharing)
