@@ -17,7 +17,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.ts ./next.config.ts
 
-# ✅ Inject env file for production
+# Inject env file for production
 COPY .env.docker .env
 
 # Install only production dependencies
