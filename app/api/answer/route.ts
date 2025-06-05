@@ -95,6 +95,7 @@ async function classifyIntentWithLLM(
 export async function POST(req: NextRequest) {
   try {
     const { query, lat, lng } = await req.json();
+
     if (!query || typeof query !== "string") {
       return NextResponse.json(
         { error: "Missing or invalid query" },
@@ -252,6 +253,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Sort them using finalScore to get the best matches in the top
     matches = matches.sort((a, b) => (b.finalScore ?? 0) - (a.finalScore ?? 0));
 
     const context = matches
@@ -287,3 +289,88 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+/*  LangChain is significantly slower than direct API calls. Add commentMore actions
+    Useful for complex chains, but may add latency for simpler tasks.
+    Response time comparison:
+    LangChain-based method:
+        POST /api/search  → 200 OK in 2528ms
+        POST /api/answer  → 200 OK in 42068ms
+      Low-level API method:
+        POST /api/search  → 200 OK in 2580ms
+        POST /api/answer  → 200 OK in 17736ms
+*/
+
+// /* eslint-disable @typescript-eslint/no-explicit-any */
+// import { NextRequest, NextResponse } from "next/server";
+// import { llm, nestlePrompt } from "@/lib/langchain";
+// import { RunnableSequence } from "@langchain/core/runnables";
+
+// export const dynamic = "force-dynamic";
+
+// const answerChain = RunnableSequence.from([
+//   async (input: { query: string; context: string }) => ({
+//     question: input.query,
+//     context: input.context,
+//   }),
+//   nestlePrompt,
+//   llm,
+// ]);
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     const { query } = await req.json();
+
+//     if (!query || typeof query !== "string") {
+//       return NextResponse.json({ error: "Invalid query" }, { status: 400 });
+//     }
+
+//     // Step 1: Call /api/search
+//     const searchRes = await fetch(
+//       `${process.env.NEXT_PUBLIC_BASE_URL}/api/search`,
+//       {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ query, top: 3 }),
+//       }
+//     );
+
+//     const { matches } = await searchRes.json();
+
+//     if (!matches || matches.length === 0) {
+//       return NextResponse.json({
+//         success: true,
+//         answer: "Sorry, I couldn't find any relevant information.",
+//       });
+//     }
+
+//     // Step 2: Build context
+//     const contextLines = matches
+//       .map((m: any, i: number) =>
+//         typeof m.content === "string" ? `Chunk ${i + 1}:\n${m.content}` : null
+//       )
+//       .filter(Boolean)
+//       .join("\n\n");
+
+//     // Step 3: Run LangChain LLM chain
+//     const result = await answerChain.invoke({ query, context: contextLines });
+//     const answer = typeof result === "string" ? result : result.content;
+
+//     return NextResponse.json({
+//       success: true,
+//       answer,
+//       sources: matches.map((m: any) => ({
+//         id: m.id,
+//         sourceUrl: m.sourceUrl,
+//         chunkIndex: m.chunkIndex,
+//         entities: m.entities,
+//         score: m.score,
+//       })),
+//     });
+//   } catch (err) {
+//     return NextResponse.json(
+//       { success: false, error: (err as Error).message },
+//       { status: 500 }
+//     );
+//   }
+// }

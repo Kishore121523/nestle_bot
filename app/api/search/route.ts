@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(countResponse);
     }
 
+    // Info intent - Performs a hybrid search in both vector DB and Neo4j to calculate the finalScore
     const baseKeywords = query
       .toLowerCase()
       .split(/\W+/)
