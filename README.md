@@ -303,3 +303,10 @@ This project is deployed manually using Docker and Azure CLI throught Azure App 
 - **Limited Context Memory**: The chatbot currently handles only short-term context within a session and does not persist or recall multi-turn conversations across sessions.
 - **No Admin Dashboard**: There is no visual interface yet for monitoring entities, managing scraped data, or inspecting graph structure—this is planned for future enhancement.
 - **Single Language Support**: At the moment, only English content is supported. Internationalization and multilingual response support are on the roadmap.
+- **No Semantic Reasoning over Graph**: The graph queries are currently one-hop (no multi-hop relationship chains or embeddings).
+- **Limited Location Awareness**: Store-finding logic uses mock data and assumes the user is near one of a few preconfigured cities (e.g., Toronto, Montreal, Vancouver). It calculates haversine distance to match products within a 30km radius. This radius is customizable.
+- **Product Purchase Logic is Mocked**: Store results are mocked, and Amazon product links are generated using a static format:
+*https://www.amazon.ca/s?k=Nestle+<ProductName>* — these are not verified links and may not reflect real-time product listings.
+
+
+
