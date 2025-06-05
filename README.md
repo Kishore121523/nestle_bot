@@ -13,7 +13,6 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 - **Easily Customizable Crawling Depth**: The crawling system is designed to be fully configurable. Currently, it scrapes up to depth 2 (homepage links and their sub-links), producing ~2500 chunks of content. The Azure Cognitive Search free tier restricts storage to 50MB. Optimizations brought the index size to ~49.85MB without losing meaningful content.  
    ➤ **To Scale**: Adjust the `maxDepth` parameter in the `runScrapeBatch` function, and the pipeline (scraping → filtering → embedding → indexing) will automatically adapt and process the expanded dataset.
 
-
 - **Entity extraction**: Products, ingredients, categories, and topics were extracted from each content chunk using the **Azure OpenAI o3-mini model** with an **optimized prompt** for efficiency and accuracy.
 
 - **GraphRAG module** implemented using **Neo4j** to capture and query **relationships between entities** for deeper contextual understanding.
@@ -25,8 +24,13 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 - **Cold Start Latency on Azure Basic Plan**: Since the "Always On" feature is not available on the Basic App Service plan, the chatbot may experience slight delays when handling the first request after a period of inactivity.  
    ➤ **Workaround**: A lightweight ping script or an external cron job (UptimeRobot) is used to send a request to the app every 5 minutes to keep it warm.
 
+- **Structured Count Queries**: The chatbot can now accurately respond to structured queries like
+*“How many products does Nestle have in the chocolate category?”* by querying the underlying Neo4j graph using Cypher. This goes beyond standard RAG limitations.
 
+- **Location-Aware Store Finder**: When a user asks, *“Where can I buy KitKat?”*, the bot uses the user's current geolocation to find relevant store matches.
+   ➤ **Bonus UX**: Store names in the response are clickable and open the exact location on Google Maps in a new tab.
 
+- **Amazon Purchase Link Integration**: The bot dynamically generates a buy link using the product name and appends it to the response.
 
 ## Demo
 
