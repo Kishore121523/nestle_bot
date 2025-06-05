@@ -62,6 +62,9 @@ Nestle Assistant is an AI-powered chatbot integrated with MadeWithNestle.ca that
 |                               | Cypher                                                    | Query language used to ingest and link graph nodes semantically        |
 ||||
 | **Deployment**      | Microsoft Azure (App Service, ACR, CLI)                  | Dockerized chatbot deployed via Azure Container Registry (ACR) and Azure App Service using Azure CLI for real-time scalability |
+||||
+| **Optional (Not Used in Final Build)**      | LangChain                  | Evaluated for complex chains but commented out due to higher latency |
+
 
                            
 
