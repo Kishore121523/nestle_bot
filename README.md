@@ -1,7 +1,7 @@
 
 # Nestlé Canada AI Chatbot
 
-This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate, real-time answers to user queries using hybrid search and a Graph-based Retrieval-Augmented Generation (GraphRAG) system. This solution demonstrates a complete end-to-end pipeline for building and deploying a context-aware chatbot using modern AI, search, and graph technologies.
+Nestle Assistant is an AI-powered chatbot integrated with MadeWithNestle.ca that combines real-time semantic search with a graph-based RAG system to answer both descriptive and structured queries. It features a responsive, mobile-friendly UI with auto-scroll and Nestlé-inspired branding, a store locator that uses geolocation to show nearby purchase options, Amazon link integration for direct product access, and a Neo4j-powered knowledge graph to accurately handle queries like “How many products are there under the coffee category?”, effectively overcoming traditional RAG limitations.
 
 ## Key Features:
 - **Customizable chatbot interface** with support for a **pop-out feature**, **name**, and **icon customization**. A **custom landing page for Nestlé** was designed and developed specifically for this project, with the chatbot fully integrated into the user interface for a seamless experience.
@@ -27,8 +27,7 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 - **Structured Count Queries**: The chatbot can now accurately respond to structured queries like
 *“How many products does Nestle have in the chocolate category?”* by querying the underlying Neo4j graph using Cypher. This goes beyond standard RAG limitations.
 
-- **Location-Aware Store Finder**: When a user asks, *“Where can I buy KitKat?”*, the bot uses the user's current geolocation to find relevant store matches. 
-   ➤ **Bonus UX**: Store names in the response are clickable and open the exact location on Google Maps in a new tab.
+- **Location-Aware Store Finder**: When a user asks, *“Where can I buy KitKat?”*, the bot uses the user's current geolocation to find relevant store matches. **Bonus UX**: Store names in the response are clickable and open the exact location on Google Maps in a new tab.
 
 - **Amazon Purchase Link Integration**: The bot dynamically generates a buy link using the product name and appends it to the response.
 
