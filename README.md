@@ -27,8 +27,8 @@ This AI-powered chatbot is integrated with MadeWithNestle.ca to provide accurate
 - **Structured Count Queries**: The chatbot can now accurately respond to structured queries like
 *“How many products does Nestle have in the chocolate category?”* by querying the underlying Neo4j graph using Cypher. This goes beyond standard RAG limitations.
 
-- **Location-Aware Store Finder**: When a user asks, *“Where can I buy KitKat?”*, the bot uses the user's current geolocation to find relevant store matches.
-     ➤ **Bonus UX**: Store names in the response are clickable and open the exact location on Google Maps in a new tab.
+- **Location-Aware Store Finder**: When a user asks, *“Where can I buy KitKat?”*, the bot uses the user's current geolocation to find relevant store matches. 
+   ➤ **Bonus UX**: Store names in the response are clickable and open the exact location on Google Maps in a new tab.
 
 - **Amazon Purchase Link Integration**: The bot dynamically generates a buy link using the product name and appends it to the response.
 
